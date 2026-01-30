@@ -1,10 +1,10 @@
-# Claude-Code Startup
+# Claude Code Sub-Agents for Large Projects
 
-A starter template for building applications with Claude Code using specialized sub-agents for the complete software development lifecycle.
+A comprehensive framework of specialized sub-agents for Claude Code, designed for the complete software development lifecycle of large-scale applications.
 
-## What This Template Does
+## Overview
 
-This template provides a team of AI agents that work together to build your application:
+This framework provides 25 coordinated AI agents that work together to build your application:
 
 - **Requirements Agent** - Elicits requirements using ISO 29148 standard
 - **Architect Agent** - Makes technology and structure decisions
@@ -21,7 +21,7 @@ The **Task Manager** coordinates everything, tracking what's done and what's nex
 ### 1. Create Your Project
 
 ```bash
-gh repo create my-project --template osok/claude-code-startup --clone
+gh repo create my-project --template osok/claude-code-startup-large-projects --clone
 cd my-project
 ```
 
@@ -116,7 +116,7 @@ Pre-built conventions for 27 technologies:
 ```
 your-project/
 ├── .claude/agents/       # Agent definitions
-├── Claude.md             # Project memory and status
+├── CLAUDE.md             # Project memory and status
 ├── conventions/          # Coding standards by language
 ├── requirement-docs/     # ISO 29148 requirements
 ├── design-docs/          # Generated design documents
