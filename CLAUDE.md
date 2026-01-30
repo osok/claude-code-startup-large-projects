@@ -196,6 +196,50 @@ project/
 | `lets begin` | Check requirements, collect if missing, get approval, start workflow |
 | `continue` | Resume current work from task list |
 
+### `initialize` Workflow
+
+When user says `initialize`, perform these actions **before** asking what to build:
+
+1. **Reset Current Work section** to blank state:
+   ```markdown
+   ## Current Work
+
+   <!-- This section tracks active work. Clear when complete. -->
+
+   **Seq:** (pending)
+   **Name:** (pending)
+   **Status:** Not Started
+
+   **Task List:** (none)
+
+   **Current Phase:** Awaiting Requirements
+
+   **Summary:** (none)
+   ```
+
+2. **Reset README.md** to minimal template:
+   ```markdown
+   # Project Name
+
+   (Project description will be added after requirements are defined)
+
+   ## Getting Started
+
+   See [CLAUDE.md](CLAUDE.md) for development workflow.
+   ```
+
+3. **Reset Document Sequence Tracker** - Clear all rows except header
+
+4. **Clear project artifacts** (if they exist):
+   - Delete files in `requirement-docs/` (except `README.md` and `_sample-requirements.md`)
+   - Delete files in `design-docs/` (except templates)
+   - Delete files in `project-docs/` (except `adrs/` folder structure)
+   - Clear `project-docs/activity.log` if it exists
+
+5. **After all resets complete**, ask: "What would you like to build?"
+
+---
+
 ### `lets begin` Workflow
 
 1. **Check for requirements** in `requirement-docs/`
