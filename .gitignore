@@ -32,3 +32,6 @@ Thumbs.db
 # Keep example env files
 !.env-example
 !.env.example
+
+# Local scripts
+run-chrome.sh
