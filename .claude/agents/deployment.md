@@ -9,6 +9,12 @@ model: sonnet
 
 Manages environment configuration and deployment.
 
+## Console Output Protocol
+
+**Required:** Output these messages to console:
+- On start: `deployment starting...`
+- On completion: `deployment ending...`
+
 ## Behavior
 
 1. Read Claude.md to get current work context
@@ -307,18 +313,32 @@ export ENV=production
 
 ## Log Entry Output
 
-Include a log entry block in your response for Task Manager to append to activity log:
+**MANDATORY:** Include a log entry block in your response for Task Manager to append to activity log.
 
-```xml
+```json
 <log-entry>
-  <agent>deployment</agent>
-  <action>COMPLETE|BLOCKED|ERROR</action>
-  <details>Brief description of deployment work</details>
-  <files>Config files created or modified</files>
-  <decisions>Deployment decisions made (if any)</decisions>
-  <errors>Deployment errors (if any)</errors>
+{
+  "agent": "deployment",
+  "action": "COMPLETE|BLOCKED|ERROR",
+  "phase": "deployment",
+  "requirements": ["REQ-DEP-001"],
+  "task_id": "T001",
+  "details": "Brief description of deployment work",
+  "files_created": ["docker-compose.yml", ".env-example"],
+  "files_modified": [".gitignore"],
+  "decisions": ["Deployment decisions made"],
+  "errors": []
+}
 </log-entry>
 ```
+
+**Field Notes:**
+- `requirements`: Array of REQ-DEP-* IDs addressed
+- `task_id`: The task ID from the task list
+- `files_created`: Docker, CDK, config files (full paths)
+- `files_modified`: Updated config files (full paths)
+- `decisions`: Array of deployment decisions; empty array if none
+- `errors`: Array of error messages; empty array if none
 
 ## Return Format
 

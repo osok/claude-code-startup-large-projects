@@ -130,9 +130,22 @@ your-project/
 
 | Command | When to Use |
 |---------|-------------|
-| `initialize` | Once, after cloning |
-| `lets begin` | Start new work - checks requirements, gets approval, runs workflow |
-| `continue` | Resume work in new session |
+| `initialize` | Reset project to blank state |
+| `new work` | Start a new work item - creates requirements doc, interviews you |
+| `lets begin` | Check requirements exist, get approval, start workflow |
+| `continue` | Resume work in current session |
+
+### `new work` Command
+
+The primary way to start new development:
+
+1. **Creates new sequence** (002, 003, etc.)
+2. **Prompts for description** → generates short name
+3. **Creates requirements doc**: `requirement-docs/{seq}-requirements-{short_name}.md`
+4. **Asks how to provide requirements**:
+   - Upload/paste your own requirements
+   - Interview mode - agent asks structured questions
+5. **Uses ISO/IEC/IEEE 29148:2018** format for requirements
 
 ## How It Works
 
@@ -140,6 +153,21 @@ your-project/
 2. **Task Manager as orchestrator** - One agent controls workflow
 3. **Schemas as source of truth** - Data Agent maintains authoritative schemas
 4. **Smart failure routing** - Test failures route to appropriate agents
+5. **Activity logging** - All agent actions logged to `project-docs/activity.log` (JSONL format)
+
+## Document Strategy
+
+**Work-specific documents** (created per work item):
+- `requirement-docs/{seq}-requirements-{short_name}.md` - Requirements
+- `design-docs/{seq}-design-{short_name}.md` - Design overview
+
+**Foundational documents** (updated, not duplicated):
+- `design-docs/01-style-guide.md` - Single style guide
+- `design-docs/02-data-architecture.md` - Single data architecture
+- `design-docs/03-security-architecture.md` - Single security doc
+- Other design docs (10-, 20-, 30-, etc.) - Updated to incorporate new work
+
+When adding new features, design agents **update existing docs** with sections labeled `## Seq {NNN}: {Short Name}` rather than creating duplicates.
 
 ## Workflow
 

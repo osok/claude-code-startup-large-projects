@@ -9,6 +9,12 @@ model: sonnet
 
 Implements code following project conventions.
 
+## Console Output Protocol
+
+**Required:** Output these messages to console:
+- On start: `developer starting...`
+- On completion: `developer ending...`
+
 ## Behavior
 
 1. Read Claude.md to get current work context
@@ -304,18 +310,32 @@ If implementation requires a dependency not in design:
 
 ## Log Entry Output
 
-Include a log entry block in your response for Task Manager to append to activity log:
+**MANDATORY:** Include a log entry block in your response for Task Manager to append to activity log.
 
-```xml
+```json
 <log-entry>
-  <agent>developer</agent>
-  <action>COMPLETE|BLOCKED|ERROR</action>
-  <details>Brief description of work performed</details>
-  <files>List of files created or modified</files>
-  <decisions>Key implementation decisions made (if any)</decisions>
-  <errors>Error details (if any)</errors>
+{
+  "agent": "developer",
+  "action": "COMPLETE|BLOCKED|ERROR",
+  "phase": "implementation",
+  "requirements": ["REQ-XXX-FN-001"],
+  "task_id": "T001",
+  "details": "Brief description of work performed",
+  "files_created": ["src/new-file.ts"],
+  "files_modified": ["src/existing-file.ts"],
+  "decisions": ["Key implementation decisions made"],
+  "errors": []
+}
 </log-entry>
 ```
+
+**Field Notes:**
+- `requirements`: Array of REQ-* IDs addressed by this work
+- `task_id`: The task ID from the task list (e.g., "T001")
+- `files_created`: New files created (full paths)
+- `files_modified`: Existing files changed (full paths)
+- `decisions`: Array of key decisions; empty array if none
+- `errors`: Array of error messages; empty array if none
 
 ## Return Format
 
