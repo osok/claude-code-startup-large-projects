@@ -4,7 +4,7 @@ A comprehensive framework of specialized sub-agents for Claude Code, designed fo
 
 ## Overview
 
-This framework provides 25 coordinated AI agents that work together to build your application:
+This framework provides 26 coordinated AI agents that work together to build your application:
 
 - **Requirements Agent** - Elicits requirements using ISO 29148 standard
 - **Architect Agent** - Makes technology and structure decisions
@@ -15,6 +15,8 @@ This framework provides 25 coordinated AI agents that work together to build you
 - **Documentation Agent** - Creates user and developer docs
 
 The **Task Manager** coordinates everything, tracking what's done and what's next.
+
+Use `@upgrade` to keep your framework files in sync with the latest version.
 
 ## Quick Start
 
@@ -45,7 +47,7 @@ This will:
 
 Use `continue` to resume work in new sessions.
 
-## Included Agents (25 total)
+## Included Agents (26 total)
 
 ### Core Workflow Agents
 
@@ -97,6 +99,12 @@ Use `continue` to resume work in new sessions.
 | **Code Reviewer - Security** | Checks OWASP vulnerabilities |
 | **Code Reviewer - Integration** | Finds stubs, wiring gaps |
 
+### Utility Agents
+
+| Agent | What It Does |
+|-------|--------------|
+| **Upgrade** | Syncs framework files from source (user-invocable only) |
+
 ## Language Support
 
 Pre-built conventions for 27 technologies:
@@ -134,6 +142,7 @@ your-project/
 | `new work` | Start a new work item - creates requirements doc, interviews you |
 | `lets begin` | Check requirements exist, get approval, start workflow |
 | `continue` | Resume work in current session |
+| `@upgrade` | Sync framework files with latest version |
 
 ### `new work` Command
 
@@ -146,6 +155,30 @@ The primary way to start new development:
    - Upload/paste your own requirements
    - Interview mode - agent asks structured questions
 5. **Uses ISO/IEC/IEEE 29148:2018** format for requirements
+
+### `@upgrade` Command
+
+Keep your framework files in sync with the latest version:
+
+1. **Invoke**: Type `@upgrade` in the console
+2. **Choose source**:
+   - Default GitHub repo: `osok/claude-code-startup-large-projects`
+   - Different GitHub repo
+   - Local directory (useful if you have unreleased changes)
+3. **Review changes**: Agent shows what will be updated/added
+4. **Confirm**: Approve the upgrade
+
+**What gets upgraded**:
+- `.claude/agents/*.md` - All agent definitions
+- `CLAUDE.md` - Framework sections (preserves your project-specific content)
+- `conventions/` - Coding standards
+- `design-templates/` - Design document templates
+
+**What's preserved**:
+- Your `Current Work` section in CLAUDE.md
+- Your `Document Sequence Tracker` entries
+- Any custom agents you've created
+- All your project files (requirements, designs, code)
 
 ## How It Works
 
