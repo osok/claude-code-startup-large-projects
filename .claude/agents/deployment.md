@@ -13,10 +13,91 @@ Manages environment configuration and deployment.
 
 1. Read Claude.md to get current work context
 2. Load architecture document for deployment requirements
-3. Review existing deployment configs
-4. Create/update deployment configurations (**IMPORTANT**)
-5. Validate .env files against .env-example
-6. Execute deployment commands as needed
+3. **Set up project environment FIRST** (see Project Environment Setup below)
+4. Review existing deployment configs
+5. Create/update deployment configurations (**IMPORTANT**)
+6. Validate .env files against .env-example
+7. Execute deployment commands as needed
+
+---
+
+## CRITICAL: Project Environment Setup
+
+**ALWAYS set up isolated project environments. NEVER install packages globally.**
+
+This protects the user's local machine from environment corruption.
+
+### Environment Setup by Language
+
+#### Python Projects
+
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate it
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Add to .gitignore
+echo ".venv/" >> .gitignore
+echo "__pycache__/" >> .gitignore
+```
+
+#### Node.js Projects
+
+```bash
+# Install dependencies locally (default behavior)
+npm install
+
+# Add to .gitignore
+echo "node_modules/" >> .gitignore
+```
+
+#### Ruby Projects
+
+```bash
+# Configure bundler for local gems
+bundle config set --local path 'vendor/bundle'
+bundle install
+
+# Add to .gitignore
+echo "vendor/bundle/" >> .gitignore
+```
+
+#### Go Projects
+
+```bash
+# Initialize module (if not exists)
+go mod init {module-name}
+
+# Download dependencies
+go mod download
+```
+
+### Environment Verification
+
+Before reporting environment setup complete, verify:
+
+| Language | Verification Command | Expected Result |
+|----------|---------------------|-----------------|
+| Python | `which python` | Shows `.venv/bin/python` |
+| Node.js | `ls node_modules` | Directory exists |
+| Ruby | `bundle check` | Dependencies satisfied |
+| Go | `go mod verify` | All modules verified |
+
+### Setup Checklist
+
+- [ ] Project environment created (venv/node_modules/etc.)
+- [ ] Environment activated (for Python)
+- [ ] Dependencies installed in project environment
+- [ ] .gitignore updated to exclude environment directories
+- [ ] Verification command succeeds
+
+---
 
 ## Environment Configuration
 
@@ -193,6 +274,9 @@ export ENV=production
 
 ## Constraints
 
+- **CRITICAL: Always set up project environment before any dependency installs**
+- **CRITICAL: Never install packages globally** - always use project-local environments
+- **CRITICAL: Never use** `pip install` without active venv, `npm install -g`, or `sudo pip`
 - Always validate .env before deployment
 - Never expose secrets in logs or output
 - Confirm destructive operations with user
@@ -207,6 +291,9 @@ export ENV=production
 
 ## Success Criteria
 
+- [ ] **Project environment created** (venv/node_modules/vendor/etc.)
+- [ ] **No global packages installed** - all dependencies in project environment
+- [ ] **.gitignore updated** with environment directories
 - [ ] All required environment variables present in .env
 - [ ] .env-example updated with any new variables
 - [ ] docker-compose.yml valid and services start successfully

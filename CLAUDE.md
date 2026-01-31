@@ -163,6 +163,51 @@ project/
 5. **Mid-Task Requests** - Agents can request work; Task Manager queues
 6. **Test Runner Routing** - Routes failures to appropriate agents
 7. **No Dates** - All documents are timeless
+8. **Environment Isolation** - NEVER pollute the host machine's global environment (see below)
+
+---
+
+## CRITICAL: Environment Isolation
+
+**NEVER install packages, dependencies, or tools globally on the host machine.**
+
+This protects the user's local development environment from corruption, version conflicts, and unintended side effects.
+
+### Required Isolation by Language
+
+| Language | Isolation Method | Setup Command |
+|----------|------------------|---------------|
+| Python | Virtual environment | `python -m venv .venv && source .venv/bin/activate` |
+| Node.js | Local node_modules | `npm install` (default behavior, no -g flag) |
+| Ruby | Bundler with path | `bundle config set --local path 'vendor/bundle'` |
+| Go | Go modules | `go mod init` (default behavior) |
+| Rust | Cargo (project-local) | Default behavior |
+| Java | Maven/Gradle (project-local) | Default behavior |
+
+### Python-Specific Requirements
+
+1. **Always create venv first** before any pip install:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/Mac
+   # or: .venv\Scripts\activate  # Windows
+   ```
+
+2. **Never use** `pip install` without an active venv
+3. **Never use** `sudo pip install`
+4. **Add to .gitignore**: `.venv/`, `venv/`, `__pycache__/`
+
+### Node.js-Specific Requirements
+
+1. **Never use** `npm install -g` or `yarn global add`
+2. Use `npx` for CLI tools instead of global installs
+3. **Add to .gitignore**: `node_modules/`
+
+### Enforcement
+
+- Deployment Agent must set up project environment before any installs
+- Developer Agent must verify environment is active before installing
+- Test agents must use project environment for test execution
 
 ---
 
