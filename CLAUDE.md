@@ -79,6 +79,12 @@ We are NOT using this workflow of agents to build anything. Rather they are the 
 | Code Reviewer - Security | OWASP vulnerabilities | .claude/agents/code-reviewer-security.md |
 | Code Reviewer - Integration | Stubs, wiring gaps | .claude/agents/code-reviewer-integration.md |
 
+### Utility Agents
+
+| Agent | Purpose | Docs |
+|-------|---------|------|
+| Upgrade | Syncs framework files from source (user-invocable only) | .claude/agents/upgrade.md |
+
 ---
 
 ## Unified Agent Workflow
@@ -124,6 +130,30 @@ We are NOT using this workflow of agents to build anything. Rather they are the 
 | 50- | Integration contracts | @integration-design |
 | 60- | Infrastructure | @infrastructure-design |
 | 90- | UI/UX designs | @ui-ux-design |
+
+### Design Document Strategy
+
+**Do NOT duplicate design documents for each work item.** Instead:
+
+1. **Work-specific documents** (created per work item):
+   - `requirement-docs/{seq}-requirements-{short_name}.md` - Requirements for this work
+   - `design-docs/{seq}-design-{short_name}.md` - Design overview for this work
+
+2. **Foundational documents** (updated, not duplicated):
+   - `design-docs/01-style-guide.md` - Single style guide, updated as needed
+   - `design-docs/02-data-architecture.md` - Single data architecture, updated
+   - `design-docs/03-security-architecture.md` - Single security doc, updated
+   - All other prefixed docs (10-, 20-, 30-, etc.) - Updated to incorporate new work
+
+**Update Pattern:**
+- Design agents check if foundational doc exists
+- If exists: Add new sections/updates for current work, preserve existing content
+- If not exists: Create the foundational doc
+- Reference the work sequence in updates: "Added for Seq {NNN}: {short_name}"
+
+**Example:** When adding user authentication (Seq 002):
+- CREATE: `002-requirements-user-auth.md`, `002-design-user-auth.md`
+- UPDATE: `02-data-architecture.md` (add User entity), `03-security-architecture.md` (add auth model)
 
 ---
 
@@ -213,15 +243,23 @@ This protects the user's local development environment from corruption, version 
 
 ## Requirement ID Conventions
 
-| Pattern | Type |
-|---------|------|
-| `STK-NNN` | Stakeholder |
-| `REQ-XXX-FN-NNN` | Functional |
-| `REQ-INT-UI/API-NNN` | Interface |
-| `REQ-DATA-NNN` | Data |
-| `REQ-NFR-PERF/SEC/ACC/AVAIL-NNN` | Non-functional |
-| `REQ-VER-NNN` | Verification |
-| `REQ-DEP-NNN` | Deployment |
+Requirements include the sequence number to link them to specific work items.
+
+| Pattern | Type | Example |
+|---------|------|---------|
+| `STK-{SEQ}-NNN` | Stakeholder | STK-002-001 |
+| `REQ-{SEQ}-FN-NNN` | Functional | REQ-002-FN-001 |
+| `REQ-{SEQ}-INT-UI-NNN` | UI Interface | REQ-002-INT-UI-001 |
+| `REQ-{SEQ}-INT-API-NNN` | API Interface | REQ-002-INT-API-001 |
+| `REQ-{SEQ}-DATA-NNN` | Data | REQ-002-DATA-001 |
+| `REQ-{SEQ}-NFR-PERF-NNN` | Performance | REQ-002-NFR-PERF-001 |
+| `REQ-{SEQ}-NFR-SEC-NNN` | Security | REQ-002-NFR-SEC-001 |
+| `REQ-{SEQ}-NFR-ACC-NNN` | Accessibility | REQ-002-NFR-ACC-001 |
+| `REQ-{SEQ}-NFR-AVAIL-NNN` | Availability | REQ-002-NFR-AVAIL-001 |
+| `REQ-{SEQ}-VER-NNN` | Verification | REQ-002-VER-001 |
+| `REQ-{SEQ}-DEP-NNN` | Deployment | REQ-002-DEP-001 |
+
+**Note:** `{SEQ}` is the 3-digit sequence number from Current Work (e.g., 001, 002).
 
 ---
 
@@ -238,6 +276,7 @@ This protects the user's local development environment from corruption, version 
 | Command | Meaning |
 |---------|---------|
 | `initialize` | Reset project, ask what to build |
+| `new work` | Start new work item with fresh sequence, interview for requirements |
 | `lets begin` | Check requirements, collect if missing, get approval, start workflow |
 | `continue` | Resume current work from task list |
 
@@ -282,6 +321,114 @@ When user says `initialize`, perform these actions **before** asking what to bui
    - Clear `project-docs/activity.log` if it exists
 
 5. **After all resets complete**, ask: "What would you like to build?"
+
+---
+
+### `new work` Workflow
+
+Creates a new work item without resetting existing project artifacts.
+
+1. **Determine next sequence number:**
+   - Read Document Sequence Tracker to find highest existing sequence
+   - Increment by 1 (e.g., if highest is 001, new is 002)
+   - Format as 3-digit zero-padded string
+
+2. **Prompt for work description:**
+   - Ask: "What is this work about? Provide a brief description."
+   - From description, generate a `short_name` (lowercase, hyphens, max 30 chars)
+   - Confirm short name with user: "Short name will be: `{short_name}`. OK?"
+
+3. **Update CLAUDE.md Current Work section:**
+   ```markdown
+   ## Current Work
+
+   <!-- This section tracks active work. Clear when complete. -->
+
+   **Seq:** {new_seq}
+   **Name:** {short_name}
+   **Status:** Requirements Gathering
+
+   **Task List:** (pending)
+
+   **Current Phase:** Requirements
+
+   **Summary:** {user's description}
+   ```
+
+4. **Create requirements document scaffold:**
+   - Create `requirement-docs/{seq}-requirements-{short_name}.md`
+   - Initialize with ISO/IEC/IEEE 29148:2018 structure (empty sections)
+
+5. **Ask user about requirements source:**
+   - Option A: "I'll upload/paste my requirements" → User provides content, agent formats to ISO 29148
+   - Option B: "Interview me to gather requirements" → Proceed to requirements interview
+
+6. **If interview selected, conduct requirements elicitation:**
+   - Focus on gathering information for each ISO 29148 section
+   - See Requirements Interview Guide below
+
+7. **Update Document Sequence Tracker** with new row
+
+---
+
+### Requirements Interview Guide
+
+Structured interview to gather ISO/IEC/IEEE 29148:2018 compliant requirements. **No traceability matrix required.**
+
+#### Phase 1: Introduction (Section 1)
+
+1. **Purpose:** "What problem does this system solve? Who is it for?"
+2. **Scope:** "What are the major components or modules?"
+3. **Definitions:** "Are there domain-specific terms I should know?"
+
+#### Phase 2: Stakeholders (Section 2)
+
+1. **Users:** "Who will use this system? What are their roles?"
+2. **Needs:** "What does each user type need to accomplish?"
+3. **Constraints:** "Are there budget, timeline, or technology constraints?"
+
+#### Phase 3: System Requirements (Section 3)
+
+1. **Functional:** "What should the system DO? List the main features."
+   - For each feature: "What are the acceptance criteria?"
+   - Probe: "What happens on success? On failure? Edge cases?"
+2. **Non-Functional:**
+   - Performance: "Any speed or capacity requirements?"
+   - Security: "Authentication? Authorization? Data protection needs?"
+   - Accessibility: "WCAG compliance level needed?"
+   - Availability: "Uptime requirements? Disaster recovery?"
+
+#### Phase 4: Interfaces (Section 4)
+
+1. **User Interfaces:** "Describe the screens or pages needed."
+2. **API Interfaces:** "What APIs are needed? Who consumes them?"
+3. **External Integrations:** "Any third-party systems to integrate with?"
+
+#### Phase 5: Data (Section 5)
+
+1. **Entities:** "What are the main data objects? (users, orders, etc.)"
+2. **Relationships:** "How do these relate to each other?"
+3. **Retention:** "Any data retention or deletion requirements?"
+
+#### Phase 6: Verification (Section 7)
+
+1. **Testing:** "What test coverage is expected?"
+2. **Acceptance:** "How will you know the system is complete?"
+
+#### Phase 7: Deployment (Section 8)
+
+1. **Environments:** "Development, staging, production needs?"
+2. **Infrastructure:** "Cloud provider? On-premise? Containerized?"
+
+#### Interview Principles
+
+- Ask one question at a time, wait for response
+- Confirm understanding before moving to next topic
+- Number requirements as they emerge (REQ-{SEQ}-FN-001, etc.)
+- Each requirement: clear, testable, single concern
+- Use priority labels: Must Have, Should Have, Could Have, Won't Have
+- Continue until user confirms section is complete before moving on
+- Update requirements document in real-time as answers come in
 
 ---
 
@@ -348,49 +495,144 @@ model: haiku     # Override to haiku
 
 ## Activity Log
 
-Provides traceability of all agent actions during workflow execution.
+Provides traceability of all agent actions during workflow execution. Designed for machine parsing to enable graphical visualization of requirement fulfillment.
 
-### Log Location
+### Log Location & Format
 
-`project-docs/activity.log`
+- **File:** `project-docs/activity.log`
+- **Format:** JSON Lines (JSONL) - one JSON object per line
+- **Encoding:** UTF-8
 
-### Log Entry Format
+### Log Entry Schema
 
+Each log entry is a single-line JSON object:
+
+```json
+{
+  "seq": 1,
+  "timestamp": "2024-03-15T10:30:00Z",
+  "agent": "developer",
+  "action": "START",
+  "phase": "implementation",
+  "parent_seq": null,
+  "requirements": ["REQ-AUTH-FN-001", "REQ-AUTH-FN-002"],
+  "task_id": "TASK-001",
+  "details": "Implementing user authentication API",
+  "files_created": [],
+  "files_modified": [],
+  "decisions": [],
+  "errors": [],
+  "duration_ms": null
+}
 ```
-[YYYY-MM-DD HH:MM:SS] [AGENT-NAME] [ACTION] Details
-```
+
+### Field Definitions
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `seq` | integer | Yes | Global sequence number, monotonically increasing |
+| `timestamp` | string | Yes | ISO 8601 timestamp with timezone (UTC preferred) |
+| `agent` | string | Yes | Agent name (e.g., "developer", "architect", "test-runner") |
+| `action` | string | Yes | Action type (see Action Types below) |
+| `phase` | string | Yes | Workflow phase (see Phase Values below) |
+| `parent_seq` | integer/null | Yes | Sequence number of parent entry (for nested agent calls), null if top-level |
+| `requirements` | array | Yes | Array of REQ-* IDs being addressed, empty array if none |
+| `task_id` | string/null | Yes | Task list item reference (e.g., "TASK-001"), null if not task-related |
+| `details` | string | Yes | Human-readable description of the activity |
+| `files_created` | array | Yes | Array of file paths created during this activity |
+| `files_modified` | array | Yes | Array of file paths modified during this activity |
+| `decisions` | array | Yes | Array of key decisions made, empty if none |
+| `errors` | array | Yes | Array of error messages, empty if none |
+| `duration_ms` | integer/null | Yes | Duration in milliseconds (populated on COMPLETE/ERROR entries) |
 
 ### Action Types
 
-| Action | Description |
-|--------|-------------|
-| START | Agent began execution |
-| COMPLETE | Agent finished successfully |
-| ERROR | Agent encountered an error |
-| DECISION | Significant decision made |
-| FILE_MODIFY | Existing file modified |
-| FILE_CREATE | New file created |
-| BLOCKED | Agent blocked, waiting on dependency |
-| UNBLOCKED | Agent unblocked, resuming work |
+| Action | Description | When to Log |
+|--------|-------------|-------------|
+| `START` | Agent began execution | When agent is invoked |
+| `COMPLETE` | Agent finished successfully | When agent returns success |
+| `ERROR` | Agent encountered an error | When agent fails |
+| `DECISION` | Significant decision made | When architectural/design choice is made |
+| `FILE_CREATE` | New file created | When a new file is written |
+| `FILE_MODIFY` | Existing file modified | When an existing file is changed |
+| `BLOCKED` | Agent blocked, waiting on dependency | When agent cannot proceed |
+| `UNBLOCKED` | Agent unblocked, resuming work | When blocking condition resolved |
+| `REVIEW_PASS` | Code review passed | When reviewer approves |
+| `REVIEW_FAIL` | Code review failed | When reviewer finds issues |
+| `TEST_PASS` | Test(s) passed | When test execution succeeds |
+| `TEST_FAIL` | Test(s) failed | When test execution fails |
+
+### Phase Values
+
+| Phase | Description |
+|-------|-------------|
+| `requirements` | Requirements elicitation and documentation |
+| `architecture` | Architectural decisions and ADRs |
+| `design` | Design document creation |
+| `planning` | Test planning and task creation |
+| `implementation` | Code implementation |
+| `review` | Code review |
+| `testing` | Test execution and debugging |
+| `documentation` | Documentation creation/updates |
+| `deployment` | Deployment and infrastructure |
 
 ### Log Entry Block Format
 
-Agents emit log entries in this format for Task Manager to append:
+Agents emit log entries in this JSON format for Task Manager to append:
 
-```xml
+```json
 <log-entry>
-  <agent>agent-name</agent>
-  <action>ACTION_TYPE</action>
-  <details>Description of what occurred</details>
-  <files>file1.md, file2.ts</files>
-  <decisions>Key decision made (if any)</decisions>
-  <errors>Error message (if any)</errors>
+{
+  "agent": "agent-name",
+  "action": "COMPLETE",
+  "phase": "implementation",
+  "requirements": ["REQ-XXX-FN-001"],
+  "task_id": "TASK-001",
+  "details": "Brief description of what was done",
+  "files_created": ["src/new-file.ts"],
+  "files_modified": ["src/existing-file.ts"],
+  "decisions": ["Chose X over Y because Z"],
+  "errors": []
+}
 </log-entry>
 ```
 
+**Note:** Agents do NOT include `seq`, `timestamp`, `parent_seq`, or `duration_ms` - Task Manager adds these when writing to the log.
+
 ### Log Writer Responsibility
 
-Task Manager is the sole writer to `activity.log`. Agents emit `<log-entry>` blocks in their responses; Task Manager appends entries after each agent completes.
+Task Manager is the sole writer to `activity.log`:
+
+1. **Initialize Log** - Create `project-docs/activity.log` if it doesn't exist
+2. **Track Sequence** - Maintain global sequence counter across all entries
+3. **Add Metadata** - Add `seq`, `timestamp`, `parent_seq`, `duration_ms` to agent entries
+4. **Validate Entries** - Ensure all required fields are present
+5. **Append Atomically** - Write complete JSON line (no partial writes)
+
+### Example Log Entries
+
+```jsonl
+{"seq":1,"timestamp":"2024-03-15T10:30:00Z","agent":"task-manager","action":"START","phase":"implementation","parent_seq":null,"requirements":[],"task_id":null,"details":"Beginning implementation phase","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
+{"seq":2,"timestamp":"2024-03-15T10:30:05Z","agent":"developer","action":"START","phase":"implementation","parent_seq":1,"requirements":["REQ-AUTH-FN-001","REQ-AUTH-FN-002"],"task_id":"TASK-001","details":"Implementing user authentication API","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
+{"seq":3,"timestamp":"2024-03-15T10:35:00Z","agent":"developer","action":"FILE_CREATE","phase":"implementation","parent_seq":2,"requirements":["REQ-AUTH-FN-001"],"task_id":"TASK-001","details":"Created authentication handler","files_created":["src/auth/handler.go"],"files_modified":[],"decisions":["Using JWT for stateless auth"],"errors":[],"duration_ms":null}
+{"seq":4,"timestamp":"2024-03-15T10:45:00Z","agent":"developer","action":"COMPLETE","phase":"implementation","parent_seq":1,"requirements":["REQ-AUTH-FN-001","REQ-AUTH-FN-002"],"task_id":"TASK-001","details":"User authentication API implemented","files_created":["src/auth/handler.go","src/auth/middleware.go"],"files_modified":["src/routes.go"],"decisions":["Using JWT for stateless auth","Added rate limiting middleware"],"errors":[],"duration_ms":895000}
+```
+
+### Visualization Capabilities
+
+This log format enables:
+
+| Visualization | Fields Used |
+|---------------|-------------|
+| **Requirement Timeline** | `timestamp`, `requirements`, `action` |
+| **Agent Activity Graph** | `agent`, `parent_seq`, `seq` |
+| **Phase Swimlanes** | `phase`, `timestamp`, `agent` |
+| **Requirement Coverage Heatmap** | `requirements`, `action` |
+| **File Dependency Graph** | `files_created`, `files_modified`, `agent` |
+| **Blocked/Unblocked Analysis** | `action` (BLOCKED/UNBLOCKED), `duration_ms` |
+| **Task Progress Gantt** | `task_id`, `timestamp`, `action`, `duration_ms` |
+| **Error Analysis** | `errors`, `agent`, `phase` |
+| **Decision Audit Trail** | `decisions`, `agent`, `requirements` |
 
 ---
 
