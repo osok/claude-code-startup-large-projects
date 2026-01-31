@@ -83,6 +83,13 @@ For each framework file, compare source vs local:
 | Conventions | `conventions/developer/*.md`, `conventions/testing/*.md` |
 | Templates | `design-templates/*.md` |
 
+### Files to Exclude (never add/update)
+
+These files are intentionally removed or modified during project initialization:
+
+- `requirement-docs/_sample-requirements.md` - Deleted during `initialize`
+- Any file the user has explicitly removed
+
 Report differences to user:
 ```
 ## Upgrade Summary
@@ -113,11 +120,14 @@ Upon user confirmation:
 1. **Create missing directories** if any required directories don't exist
 2. **Update modified files** - Replace local content with source content
 3. **Add new files** - Create files that exist in source but not locally
+   - **Exception:** Do NOT add excluded files (e.g., `requirement-docs/_sample-requirements.md`)
 4. **Preserve local-only files** - Do NOT delete files that only exist locally
-5. **Preserve project-specific content** in CLAUDE.md:
-   - Current Work section
-   - Document Sequence Tracker entries
-   - Any project-specific customizations marked with `<!-- PROJECT-SPECIFIC -->`
+5. **Preserve ALL project-specific content** in CLAUDE.md:
+   - Current Work section (entire section)
+   - Document Sequence Tracker entries (all rows)
+   - Custom sections added by user
+   - Any content marked with `<!-- PROJECT-SPECIFIC -->`
+   - Project title/description if customized
 
 ### Step 6: Post-Upgrade Validation
 
@@ -129,12 +139,13 @@ After upgrade:
 
 ## CLAUDE.md Merge Strategy
 
-The CLAUDE.md file requires special handling because it contains both framework content and project-specific content.
+The CLAUDE.md file requires special handling because it contains both framework content and project-specific content. **The goal is to update framework sections while preserving ALL project-specific content.**
 
 ### Sections to Update (from source):
 - Sub-Agent Index
 - Unified Agent Workflow
 - Design Document Prefixes
+- Design Document Strategy
 - Folder Structure
 - Key Decisions & Concepts
 - Environment Isolation
@@ -145,19 +156,27 @@ The CLAUDE.md file requires special handling because it contains both framework 
 - Exit Criteria
 - Git Requirements
 - Working Principles
-- Commands (framework commands)
+- Commands (framework commands, not project-specific commands)
 
-### Sections to Preserve (project-specific):
-- Current Work
-- Document Sequence Tracker (entries, not format)
+### Sections to Preserve (project-specific) - NEVER OVERWRITE:
+- Current Work (entire section)
+- Document Sequence Tracker (all entries)
 - Any content marked with `<!-- PROJECT-SPECIFIC -->`
+- Any custom sections added by the user
+- Project title and description at the top (if customized)
 
 ### Merge Approach:
-1. Parse both source and local CLAUDE.md
-2. Identify section boundaries (## headers)
-3. Replace framework sections with source versions
-4. Preserve project-specific sections
-5. Merge Document Sequence Tracker (keep local entries, update format if needed)
+1. **Read local CLAUDE.md completely** - Capture all content
+2. Parse both source and local CLAUDE.md
+3. Identify section boundaries (## headers)
+4. For each section in source:
+   - If it's a framework section: Update with source version
+   - If it's a project-specific section: **Keep local version entirely**
+5. For sections only in local (not in source): **Keep them** (user additions)
+6. Merge Document Sequence Tracker:
+   - Keep ALL local entries
+   - Update table format if needed
+7. **Verify nothing was lost** - Compare section count before/after
 
 ## Directory Creation
 
@@ -192,10 +211,13 @@ design-templates/
 ## Constraints
 
 - **Never delete local-only files** - User may have custom agents or content
+- **Never lose CLAUDE.md content** - All project-specific sections must be preserved
+- **Never add excluded files** - Files like `_sample-requirements.md` are intentionally removed
 - **Always confirm before making changes** - Show summary first
-- **Preserve project state** - Current Work, sequence tracker, etc.
+- **Preserve project state** - Current Work, sequence tracker, custom sections, etc.
 - **No automatic execution** - Only user can invoke this agent
 - **Backup recommendation** - Suggest user commit changes before upgrade
+- **Verify after merge** - Confirm no content was lost from CLAUDE.md
 
 ## Outputs
 
