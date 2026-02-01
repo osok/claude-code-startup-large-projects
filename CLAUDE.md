@@ -548,13 +548,14 @@ Each log entry is a single-line JSON object:
 
 ```json
 {
-  "seq": 1,
+  "log_seq": 1,
+  "work_seq": "002",
   "timestamp": "2024-03-15T10:30:00Z",
   "agent": "developer",
   "action": "START",
   "phase": "implementation",
-  "parent_seq": null,
-  "requirements": ["REQ-AUTH-FN-001", "REQ-AUTH-FN-002"],
+  "parent_log_seq": null,
+  "requirements": ["REQ-002-FN-001", "REQ-002-FN-002"],
   "task_id": "TASK-001",
   "details": "Implementing user authentication API",
   "files_created": [],
@@ -569,12 +570,13 @@ Each log entry is a single-line JSON object:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `seq` | integer | Yes | Global sequence number, monotonically increasing |
+| `log_seq` | integer | Yes | Log entry sequence number, monotonically increasing (1, 2, 3...) |
+| `work_seq` | string | Yes | Work item sequence from CLAUDE.md Current Work (e.g., "001", "002") |
 | `timestamp` | string | Yes | ISO 8601 timestamp with timezone (UTC preferred) |
 | `agent` | string | Yes | Agent name (e.g., "developer", "architect", "test-runner") |
 | `action` | string | Yes | Action type (see Action Types below) |
 | `phase` | string | Yes | Workflow phase (see Phase Values below) |
-| `parent_seq` | integer/null | Yes | Sequence number of parent entry (for nested agent calls), null if top-level |
+| `parent_log_seq` | integer/null | Yes | Log sequence of parent entry (for nested agent calls), null if top-level |
 | `requirements` | array | Yes | Array of REQ-* IDs being addressed, empty array if none |
 | `task_id` | string/null | Yes | Task list item reference (e.g., "TASK-001"), null if not task-related |
 | `details` | string | Yes | Human-readable description of the activity |
@@ -636,25 +638,26 @@ Agents emit log entries in this JSON format for Task Manager to append:
 </log-entry>
 ```
 
-**Note:** Agents do NOT include `seq`, `timestamp`, `parent_seq`, or `duration_ms` - Task Manager adds these when writing to the log.
+**Note:** Agents do NOT include `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, or `duration_ms` - Task Manager adds these when writing to the log.
 
 ### Log Writer Responsibility
 
 Task Manager is the sole writer to `activity.log`:
 
 1. **Initialize Log** - Create `project-docs/activity.log` if it doesn't exist
-2. **Track Sequence** - Maintain global sequence counter across all entries
-3. **Add Metadata** - Add `seq`, `timestamp`, `parent_seq`, `duration_ms` to agent entries
-4. **Validate Entries** - Ensure all required fields are present
-5. **Append Atomically** - Write complete JSON line (no partial writes)
+2. **Track Log Sequence** - Maintain global log_seq counter across all entries
+3. **Add Work Sequence** - Read current work_seq from CLAUDE.md Current Work section
+4. **Add Metadata** - Add `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, `duration_ms` to agent entries
+5. **Validate Entries** - Ensure all required fields are present
+6. **Append Atomically** - Write complete JSON line (no partial writes)
 
 ### Example Log Entries
 
 ```jsonl
-{"seq":1,"timestamp":"2024-03-15T10:30:00Z","agent":"task-manager","action":"START","phase":"implementation","parent_seq":null,"requirements":[],"task_id":null,"details":"Beginning implementation phase","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
-{"seq":2,"timestamp":"2024-03-15T10:30:05Z","agent":"developer","action":"START","phase":"implementation","parent_seq":1,"requirements":["REQ-AUTH-FN-001","REQ-AUTH-FN-002"],"task_id":"TASK-001","details":"Implementing user authentication API","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
-{"seq":3,"timestamp":"2024-03-15T10:35:00Z","agent":"developer","action":"FILE_CREATE","phase":"implementation","parent_seq":2,"requirements":["REQ-AUTH-FN-001"],"task_id":"TASK-001","details":"Created authentication handler","files_created":["src/auth/handler.go"],"files_modified":[],"decisions":["Using JWT for stateless auth"],"errors":[],"duration_ms":null}
-{"seq":4,"timestamp":"2024-03-15T10:45:00Z","agent":"developer","action":"COMPLETE","phase":"implementation","parent_seq":1,"requirements":["REQ-AUTH-FN-001","REQ-AUTH-FN-002"],"task_id":"TASK-001","details":"User authentication API implemented","files_created":["src/auth/handler.go","src/auth/middleware.go"],"files_modified":["src/routes.go"],"decisions":["Using JWT for stateless auth","Added rate limiting middleware"],"errors":[],"duration_ms":895000}
+{"log_seq":1,"work_seq":"002","timestamp":"2024-03-15T10:30:00Z","agent":"task-manager","action":"START","phase":"implementation","parent_log_seq":null,"requirements":[],"task_id":null,"details":"Beginning implementation phase","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
+{"log_seq":2,"work_seq":"002","timestamp":"2024-03-15T10:30:05Z","agent":"developer","action":"START","phase":"implementation","parent_log_seq":1,"requirements":["REQ-002-FN-001","REQ-002-FN-002"],"task_id":"TASK-001","details":"Implementing user authentication API","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
+{"log_seq":3,"work_seq":"002","timestamp":"2024-03-15T10:35:00Z","agent":"developer","action":"FILE_CREATE","phase":"implementation","parent_log_seq":2,"requirements":["REQ-002-FN-001"],"task_id":"TASK-001","details":"Created authentication handler","files_created":["src/auth/handler.go"],"files_modified":[],"decisions":["Using JWT for stateless auth"],"errors":[],"duration_ms":null}
+{"log_seq":4,"work_seq":"002","timestamp":"2024-03-15T10:45:00Z","agent":"developer","action":"COMPLETE","phase":"implementation","parent_log_seq":1,"requirements":["REQ-002-FN-001","REQ-002-FN-002"],"task_id":"TASK-001","details":"User authentication API implemented","files_created":["src/auth/handler.go","src/auth/middleware.go"],"files_modified":["src/routes.go"],"decisions":["Using JWT for stateless auth","Added rate limiting middleware"],"errors":[],"duration_ms":895000}
 ```
 
 ### Visualization Capabilities
@@ -664,7 +667,7 @@ This log format enables:
 | Visualization | Fields Used |
 |---------------|-------------|
 | **Requirement Timeline** | `timestamp`, `requirements`, `action` |
-| **Agent Activity Graph** | `agent`, `parent_seq`, `seq` |
+| **Agent Activity Graph** | `agent`, `parent_log_seq`, `log_seq` |
 | **Phase Swimlanes** | `phase`, `timestamp`, `agent` |
 | **Requirement Coverage Heatmap** | `requirements`, `action` |
 | **File Dependency Graph** | `files_created`, `files_modified`, `agent` |
@@ -672,6 +675,7 @@ This log format enables:
 | **Task Progress Gantt** | `task_id`, `timestamp`, `action`, `duration_ms` |
 | **Error Analysis** | `errors`, `agent`, `phase` |
 | **Decision Audit Trail** | `decisions`, `agent`, `requirements` |
+| **Work Item Filtering** | `work_seq` - filter all entries by work item |
 
 ---
 
