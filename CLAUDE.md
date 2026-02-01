@@ -456,6 +456,45 @@ Structured interview to gather ISO/IEC/IEEE 29148:2018 compliant requirements. *
 
 ---
 
+### `continue` Workflow
+
+Resumes work from the current task list. **Task Manager is the primary coordinator for all resumed work.**
+
+1. **Invoke @task-manager** - Task Manager coordinates ALL continued work
+
+2. **Task Manager reads current state:**
+   - Load CLAUDE.md to get current work context (Seq, Name, Task List path)
+   - Load the task list file for current sequence
+   - Check `project-docs/activity.log` for last state
+
+3. **Task Manager detects and resets stale tasks:**
+   - Any task marked `in-progress` is stale (session was interrupted)
+   - Reset stale tasks to `pending`
+   - Log: "Reset stale task T00X to pending"
+
+4. **Task Manager finds next actionable task:**
+   - First `pending` task with all dependencies `complete`
+   - Or first `blocked` task whose blocker is now `complete`
+
+5. **Task Manager invokes appropriate agent:**
+   - Route task to correct agent based on task type
+   - Provide context from task list and previous work
+   - Monitor agent result
+
+6. **Task Manager updates task list immediately:**
+   - Mark completed tasks as `complete`
+   - Handle blocked tasks (create new tasks, update dependencies)
+   - Update `project-docs/activity.log`
+
+7. **Repeat until:**
+   - All tasks complete, OR
+   - User intervention required, OR
+   - Exit criteria check needed for phase transition
+
+**Important:** The user should NOT invoke individual agents directly when continuing work. Always use `continue` to let Task Manager coordinate.
+
+---
+
 ## Model Configuration
 
 **Default Model:** `opus`

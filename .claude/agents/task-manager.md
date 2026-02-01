@@ -1,6 +1,6 @@
 ---
 name: task-manager
-description: Orchestrates development workflow. Use when user says "begin work" or needs task coordination.
+description: Orchestrates development workflow. Use when user says "lets begin", "continue", or needs task coordination. Primary coordinator for all work.
 tools: Read, Write, Edit, Glob, Grep, Task, AskUserQuestion
 model: opus
 ---

@@ -141,7 +141,7 @@ your-project/
 | `initialize` | Reset project to blank state |
 | `new work` | Start a new work item - creates requirements doc, interviews you |
 | `lets begin` | Check requirements exist, get approval, start workflow |
-| `continue` | Resume work in current session |
+| `continue` | Resume work via Task Manager |
 | `@upgrade` | Sync framework files with latest version |
 
 ### `new work` Command
@@ -155,6 +155,19 @@ The primary way to start new development:
    - Upload/paste your own requirements
    - Interview mode - agent asks structured questions
 5. **Uses ISO/IEC/IEEE 29148:2018** format for requirements
+
+### `continue` Command
+
+Resume work from where you left off:
+
+1. **Invokes Task Manager** - The primary coordinator for all work
+2. **Reads current state** - Task list, activity log, CLAUDE.md
+3. **Resets stale tasks** - Any `in-progress` tasks reset to `pending`
+4. **Finds next task** - First actionable task with dependencies met
+5. **Routes to agent** - Invokes appropriate agent for the task
+6. **Tracks progress** - Updates task list and activity log
+
+**Important:** Always use `continue` to resume work. Don't invoke agents directly - let Task Manager coordinate.
 
 ### `@upgrade` Command
 
