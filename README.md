@@ -18,6 +18,12 @@ The **Task Manager** coordinates everything, tracking what's done and what's nex
 
 Use `@upgrade` to keep your framework files in sync with the latest version.
 
+## Prerequisites
+
+This framework requires the **[claude-code-project-memory-mcp](https://github.com/osok/claude-code-project-memory-mcp)** MCP server. The Memory MCP provides persistent, semantic knowledge across sessions - enabling code consistency enforcement, cross-work-item learning, and intelligent decision-making across all 26 agents.
+
+Install and configure it before using this template. See the [claude-code-project-memory-mcp repository](https://github.com/osok/claude-code-project-memory-mcp) for setup instructions.
+
 ## Quick Start
 
 ### 1. Create Your Project
@@ -119,12 +125,41 @@ Pre-built conventions for 27 technologies:
 
 **Emerging**: Zig, Solidity
 
+## Component Registry
+
+For large multi-component projects, the **Component Registry** lets you catalog, identify, and target individual components (frontends, backends, libraries, agents) so work can be directed at a specific component.
+
+### Setup
+
+Create a `COMPONENTS.md` file at your project root (see `COMPONENTS.EXAMPLE.md` for the format). Each component declares an ID, name, type, path, and description. Optional fields include language, dependencies, deployment target, and port.
+
+### Component Commands
+
+| Command | What It Does |
+|---------|-------------|
+| `list components` | Show all components (supports type filtering) |
+| `target {id}` | Set active component for subsequent work |
+| `show component {id}` | Display full details of a component |
+| `add component` | Interactively add a component to the manifest |
+| `impact {id}` | Show components affected by changes |
+| `untarget` | Clear component targeting |
+
+### How It Works
+
+1. Create `COMPONENTS.md` with your project's components
+2. Use `target {id}` to set the active component
+3. Run `new work` -- the framework scopes requirements, design, and implementation to that component
+4. Agents receive component context (path, language, type, dependencies) automatically
+5. All features are opt-in: projects without `COMPONENTS.md` work exactly as before
+
 ## Project Structure
 
 ```
 your-project/
 ├── .claude/agents/       # Agent definitions
 ├── CLAUDE.md             # Project memory and status
+├── COMPONENTS.md         # Component registry manifest (optional, user-created)
+├── COMPONENTS.EXAMPLE.md # Sample manifest for reference
 ├── conventions/          # Coding standards by language
 ├── requirement-docs/     # ISO 29148 requirements
 ├── design-docs/          # Generated design documents
@@ -142,6 +177,12 @@ your-project/
 | `new work` | Start a new work item - creates requirements doc, interviews you |
 | `lets begin` | Check requirements exist, get approval, start workflow |
 | `continue` | Resume work via Task Manager |
+| `list components` | Show all components from COMPONENTS.md |
+| `target {id}` | Set active component for subsequent work |
+| `show component {id}` | Display full details of a component |
+| `add component` | Interactively add a component to COMPONENTS.md |
+| `impact {id}` | Show components affected by changes to target |
+| `untarget` | Clear the active component targeting |
 | `@upgrade` | Sync framework files with latest version |
 
 ### `new work` Command
@@ -193,6 +234,19 @@ Keep your framework files in sync with the latest version:
 - Any custom agents you've created
 - All your project files (requirements, designs, code)
 
+## Memory MCP Integration
+
+All 26 agents are integrated with the [claude-code-project-memory-mcp](https://github.com/osok/claude-code-project-memory-mcp) server, which provides:
+
+- **Persistent knowledge** - Decisions, patterns, and context survive across sessions
+- **Semantic search** - Find relevant prior work using natural language queries
+- **Code consistency enforcement** - Ensures all components of the same type follow the same patterns, naming, and structure
+- **Base class reuse detection** - Prevents reimplementation of functionality that exists in parent classes or shared utilities
+- **Cross-work-item learning** - Design decisions from earlier work items inform later ones
+- **Requirement traceability** - Trace requirements through design, implementation, and testing
+
+Each agent uses memory at specific points in its workflow (documented in `## Memory Integration` sections within each agent definition). Key operations include `memory_search`, `code_search`, `check_consistency`, `index_file`, and `get_design_context`.
+
 ## How It Works
 
 1. **Document-based coordination** - Agents communicate via markdown files
@@ -200,6 +254,7 @@ Keep your framework files in sync with the latest version:
 3. **Schemas as source of truth** - Data Agent maintains authoritative schemas
 4. **Smart failure routing** - Test failures route to appropriate agents
 5. **Activity logging** - All agent actions logged to `project-docs/activity.log` (JSONL format)
+6. **Memory-backed consistency** - All agents use the Memory MCP for persistent knowledge and code pattern enforcement
 
 ## Document Strategy
 

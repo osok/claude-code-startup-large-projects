@@ -1,24 +1,11 @@
-# Claude Code Sub-Agents Project
-
-A collection of specialized sub-agents for the complete software development lifecycle: requirements, design, development, testing, and deployment.
+# Project
 
 ---
 
 ## Current Work
 
-<!-- This section tracks active work. Clear when complete. -->
-
-**Seq:** 001
-**Name:** Framework Enhancements v2
-**Status:** Complete
-
-**Task List:** [TASK-LIST-framework-enhancements.md](TASK-LIST-framework-enhancements.md)
-
-**Current Phase:** All Phases Complete
-
-**Summary:** Comprehensive enhancements including model configuration, activity logging, git integration, CI/CD, observability, exit criteria, secrets management, dependency policies, environment parity, database migrations, and parallelism documentation.
-
-We are NOT using this workflow of agents to build anything. Rather they are the project. This will be used as a template for future development. All tasks in the task-list have been completed.
+**Seq:** (pending) | **Name:** (pending) | **Status:** Not Started
+**Task List:** (none)
 
 ---
 
@@ -115,72 +102,7 @@ We are NOT using this workflow of agents to build anything. Rather they are the 
 | | 16 | Loop to Step 13 | Until all pass |
 | **Finalize** | 17 | @documentation | Final updates |
 
-### Design Document Prefixes
-
-| Prefix | Type | Agent |
-|--------|------|-------|
-| 00- | Overview/traceability | @design-orchestrator |
-| 01- | Style guide | @ui-ux-design |
-| 02- | Data architecture | @data-design |
-| 03- | Security architecture | @security-design |
-| 10- | Component libraries | @library-design |
-| 20- | Backend services | @backend-design |
-| 30- | Frontend applications | @frontend-design |
-| 40- | Agents/workers | @agent-design |
-| 50- | Integration contracts | @integration-design |
-| 60- | Infrastructure | @infrastructure-design |
-| 90- | UI/UX designs | @ui-ux-design |
-
-### Design Document Strategy
-
-**Do NOT duplicate design documents for each work item.** Instead:
-
-1. **Work-specific documents** (created per work item):
-   - `requirement-docs/{seq}-requirements-{short_name}.md` - Requirements for this work
-   - `design-docs/{seq}-design-{short_name}.md` - Design overview for this work
-
-2. **Foundational documents** (updated, not duplicated):
-   - `design-docs/01-style-guide.md` - Single style guide, updated as needed
-   - `design-docs/02-data-architecture.md` - Single data architecture, updated
-   - `design-docs/03-security-architecture.md` - Single security doc, updated
-   - All other prefixed docs (10-, 20-, 30-, etc.) - Updated to incorporate new work
-
-**Update Pattern:**
-- Design agents check if foundational doc exists
-- If exists: Add new sections/updates for current work, preserve existing content
-- If not exists: Create the foundational doc
-- Reference the work sequence in updates: "Added for Seq {NNN}: {short_name}"
-
-**Example:** When adding user authentication (Seq 002):
-- CREATE: `002-requirements-user-auth.md`, `002-design-user-auth.md`
-- UPDATE: `02-data-architecture.md` (add User entity), `03-security-architecture.md` (add auth model)
-
----
-
-## Folder Structure
-
-```
-project/
-├── .claude/agents/       # Sub-agent definitions
-├── CLAUDE.md             # This file - project index
-├── conventions/          # Language-specific conventions
-│   ├── developer/        # 27 language dev conventions
-│   └── testing/          # 27 language test conventions
-├── requirement-docs/     # ISO 29148 requirements
-├── design-docs/          # Design documents (prefixed by type)
-│   ├── 00-design-overview.md
-│   ├── 01-style-guide.md
-│   ├── 02-data-architecture.md
-│   ├── 03-security-architecture.md
-│   ├── 10-*, 20-*, 30-*, etc.
-│   └── ...
-├── design-templates/     # Design document templates
-├── project-docs/         # Task lists and project artifacts
-│   ├── adrs/             # Architecture Decision Records
-│   └── schemas/          # Data schemas
-├── developer-docs/       # Documentation for contributors
-└── user-docs/            # Documentation for users
-```
+**Do NOT duplicate design documents for each work item.** Create work-specific docs (`{seq}-requirements-*.md`, `{seq}-design-*.md`) but update foundational docs (01-, 02-, 03-, etc.) in place. See design-orchestrator.md for the full update pattern.
 
 ---
 
@@ -201,43 +123,18 @@ project/
 
 **NEVER install packages, dependencies, or tools globally on the host machine.**
 
-This protects the user's local development environment from corruption, version conflicts, and unintended side effects.
-
-### Required Isolation by Language
-
 | Language | Isolation Method | Setup Command |
 |----------|------------------|---------------|
 | Python | Virtual environment | `python -m venv .venv && source .venv/bin/activate` |
-| Node.js | Local node_modules | `npm install` (default behavior, no -g flag) |
+| Node.js | Local node_modules | `npm install` (no -g flag) |
 | Ruby | Bundler with path | `bundle config set --local path 'vendor/bundle'` |
 | Go | Go modules | `go mod init` (default behavior) |
 | Rust | Cargo (project-local) | Default behavior |
 | Java | Maven/Gradle (project-local) | Default behavior |
 
-### Python-Specific Requirements
-
-1. **Always create venv first** before any pip install:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Linux/Mac
-   # or: .venv\Scripts\activate  # Windows
-   ```
-
-2. **Never use** `pip install` without an active venv
-3. **Never use** `sudo pip install`
-4. **Add to .gitignore**: `.venv/`, `venv/`, `__pycache__/`
-
-### Node.js-Specific Requirements
-
-1. **Never use** `npm install -g` or `yarn global add`
-2. Use `npx` for CLI tools instead of global installs
-3. **Add to .gitignore**: `node_modules/`
-
-### Enforcement
-
-- Deployment Agent must set up project environment before any installs
-- Developer Agent must verify environment is active before installing
-- Test agents must use project environment for test execution
+**Python:** Always create venv before any `pip install`. Never use `sudo pip install`. Add `.venv/`, `__pycache__/` to `.gitignore`.
+**Node.js:** Never use `npm install -g` or `yarn global add`. Use `npx` for CLI tools. Add `node_modules/` to `.gitignore`.
+**Enforcement:** Deployment Agent sets up environment before installs. Developer Agent verifies environment is active. Test agents use project environment.
 
 ---
 
@@ -265,9 +162,8 @@ Requirements include the sequence number to link them to specific work items.
 
 ## Document Sequence Tracker
 
-| Seq | Short Name | Requirements | Design | Task List | Status |
-|-----|------------|--------------|--------|-----------|--------|
-| 001 | Framework Enhancements v2 | N/A | N/A | TASK-LIST-framework-enhancements.md | Complete |
+| Seq | Short Name | Component | Requirements | Design | Task List | Status |
+|-----|------------|-----------|--------------|--------|-----------|--------|
 
 ---
 
@@ -279,312 +175,149 @@ Requirements include the sequence number to link them to specific work items.
 | `new work` | Start new work item with fresh sequence, interview for requirements |
 | `lets begin` | Check requirements, collect if missing, get approval, start workflow |
 | `continue` | Resume current work from task list |
+| `list components` | Show all components from COMPONENTS.md (supports type filtering) |
+| `target {id}` | Set active component for subsequent work |
+| `show component {id}` | Display full details of a component |
+| `add component` | Interactively add a component to COMPONENTS.md |
+| `impact {id}` | Show components affected by changes to target |
+| `untarget` | Clear the active component targeting |
 
 ### `initialize` Workflow
 
 When user says `initialize`, perform these actions **before** asking what to build:
 
-1. **Reset Current Work section** to blank state:
-   ```markdown
-   ## Current Work
-
-   <!-- This section tracks active work. Clear when complete. -->
-
-   **Seq:** (pending)
-   **Name:** (pending)
-   **Status:** Not Started
-
-   **Task List:** (none)
-
-   **Current Phase:** Awaiting Requirements
-
-   **Summary:** (none)
-   ```
-
-2. **Reset README.md** to minimal template:
-   ```markdown
-   # Project Name
-
-   (Project description will be added after requirements are defined)
-
-   ## Getting Started
-
-   See [CLAUDE.md](CLAUDE.md) for development workflow.
-   ```
-
+1. **Reset Current Work section** to blank state (Seq/Name = pending, Status = Not Started, Phase = Awaiting Requirements)
+2. **Reset README.md** to minimal template with project name placeholder
 3. **Reset Document Sequence Tracker** - Clear all rows except header
-
 4. **Clear project artifacts** (if they exist):
    - Delete files in `requirement-docs/` (except `README.md` and `_sample-requirements.md`)
    - Delete files in `design-docs/` (except templates)
    - Delete files in `project-docs/` (except `adrs/` folder structure)
    - Clear `project-docs/activity.log` if it exists
-
+   - **Do NOT delete `COMPONENTS.md`** -- preserved across resets
 5. **After all resets complete**, ask: "What would you like to build?"
-
----
 
 ### `new work` Workflow
 
 Creates a new work item without resetting existing project artifacts.
 
-1. **Determine next sequence number:**
-   - Read Document Sequence Tracker to find highest existing sequence
-   - Increment by 1 (e.g., if highest is 001, new is 002)
-   - Format as 3-digit zero-padded string
-
-2. **Prompt for work description:**
-   - Ask: "What is this work about? Provide a brief description."
-   - From description, generate a `short_name` (lowercase, hyphens, max 30 chars)
-   - Confirm short name with user: "Short name will be: `{short_name}`. OK?"
-
-3. **Update CLAUDE.md Current Work section:**
-   ```markdown
-   ## Current Work
-
-   <!-- This section tracks active work. Clear when complete. -->
-
-   **Seq:** {new_seq}
-   **Name:** {short_name}
-   **Status:** Requirements Gathering
-
-   **Task List:** (pending)
-
-   **Current Phase:** Requirements
-
-   **Summary:** {user's description}
-   ```
-
-4. **Create requirements document scaffold:**
-   - Create `requirement-docs/{seq}-requirements-{short_name}.md`
-   - Initialize with ISO/IEC/IEEE 29148:2018 structure (empty sections)
-
-5. **Ask user about requirements source:**
-   - Option A: "I'll upload/paste my requirements" → User provides content, agent formats to ISO 29148
-   - Option B: "Interview me to gather requirements" → Proceed to requirements interview
-
-6. **If interview selected, conduct requirements elicitation:**
-   - Focus on gathering information for each ISO 29148 section
-   - See Requirements Interview Guide below
-
-7. **Update Document Sequence Tracker** with new row
-
----
-
-### Requirements Interview Guide
-
-Structured interview to gather ISO/IEC/IEEE 29148:2018 compliant requirements. **No traceability matrix required.**
-
-#### Phase 1: Introduction (Section 1)
-
-1. **Purpose:** "What problem does this system solve? Who is it for?"
-2. **Scope:** "What are the major components or modules?"
-3. **Definitions:** "Are there domain-specific terms I should know?"
-
-#### Phase 2: Stakeholders (Section 2)
-
-1. **Users:** "Who will use this system? What are their roles?"
-2. **Needs:** "What does each user type need to accomplish?"
-3. **Constraints:** "Are there budget, timeline, or technology constraints?"
-
-#### Phase 3: System Requirements (Section 3)
-
-1. **Functional:** "What should the system DO? List the main features."
-   - For each feature: "What are the acceptance criteria?"
-   - Probe: "What happens on success? On failure? Edge cases?"
-2. **Non-Functional:**
-   - Performance: "Any speed or capacity requirements?"
-   - Security: "Authentication? Authorization? Data protection needs?"
-   - Accessibility: "WCAG compliance level needed?"
-   - Availability: "Uptime requirements? Disaster recovery?"
-
-#### Phase 4: Interfaces (Section 4)
-
-1. **User Interfaces:** "Describe the screens or pages needed."
-2. **API Interfaces:** "What APIs are needed? Who consumes them?"
-3. **External Integrations:** "Any third-party systems to integrate with?"
-
-#### Phase 5: Data (Section 5)
-
-1. **Entities:** "What are the main data objects? (users, orders, etc.)"
-2. **Relationships:** "How do these relate to each other?"
-3. **Retention:** "Any data retention or deletion requirements?"
-
-#### Phase 6: Verification (Section 7)
-
-1. **Testing:** "What test coverage is expected?"
-2. **Acceptance:** "How will you know the system is complete?"
-
-#### Phase 7: Deployment (Section 8)
-
-1. **Environments:** "Development, staging, production needs?"
-2. **Infrastructure:** "Cloud provider? On-premise? Containerized?"
-
-#### Interview Principles
-
-- Ask one question at a time, wait for response
-- Confirm understanding before moving to next topic
-- Number requirements as they emerge (REQ-{SEQ}-FN-001, etc.)
-- Each requirement: clear, testable, single concern
-- Use priority labels: Must Have, Should Have, Could Have, Won't Have
-- Continue until user confirms section is complete before moving on
-- Update requirements document in real-time as answers come in
-
----
+1. **Determine next sequence number** from Document Sequence Tracker (3-digit zero-padded)
+2. **Prompt for work description**, generate `short_name` (lowercase, hyphens, max 30 chars), confirm with user
+3. **Check for component targeting** (if `COMPONENTS.md` exists, ask if work is for a specific component)
+4. **Update Current Work section** with new seq, short_name, status=Requirements Gathering, phase=Requirements. If component-scoped, add Component field and Component Context sub-section (see Component Context rules below)
+5. **Create requirements document scaffold** in `requirement-docs/` with ISO 29148 structure
+6. **Ask user about requirements source:** upload/paste OR interview
+7. **If interview selected**, invoke @requirements agent for elicitation
+8. **Update Document Sequence Tracker** with new row
 
 ### `lets begin` Workflow
 
-1. **Check for requirements** in `requirement-docs/`
-   - Skip `README.md` and `_sample-requirements.md`
-   - Look for actual project requirement documents
-
-2. **If no requirements exist:**
-   - Invoke @requirements agent
-   - Interactively collect requirements from user
-   - Create requirement document in `requirement-docs/`
-
-3. **If requirements exist:**
-   - Present summary of found requirements
-   - Ask user: "Are these requirements approved to proceed?"
-   - If no: Allow user to modify or add requirements
-   - If yes: Continue to step 4
-
-4. **Once approved:**
-   - Update Current Work section with new sequence
-   - Invoke @architect for architecture decisions
-   - Continue through Unified Agent Workflow (steps 2-17)
-
----
+1. **Check for requirements** in `requirement-docs/` (skip README.md and _sample-requirements.md)
+2. **If no requirements exist:** Invoke @requirements agent to collect interactively
+3. **If requirements exist:** Present summary, ask user for approval. If no, allow modifications
+4. **Once approved:** Update Current Work, invoke @architect, continue through Unified Agent Workflow (steps 2-17)
 
 ### `continue` Workflow
 
 Resumes work from the current task list. **Task Manager is the primary coordinator for all resumed work.**
 
-1. **Invoke @task-manager** - Task Manager coordinates ALL continued work
+1. **Invoke @task-manager** to coordinate ALL continued work
+2. Task Manager loads CLAUDE.md context, task list, activity log, and Component Context if present
+3. Resets any stale `in-progress` tasks to `pending` (interrupted session)
+4. Finds next actionable `pending` task with all dependencies `complete`
+5. Routes task to correct agent, passing component context if present
+6. Updates task list and activity log immediately on completion
+7. Repeats until all tasks complete, user intervention required, or phase transition needed
 
-2. **Task Manager reads current state:**
-   - Load CLAUDE.md to get current work context (Seq, Name, Task List path)
-   - Load the task list file for current sequence
-   - Check `project-docs/activity.log` for last state
+**Important:** Always use `continue` to let Task Manager coordinate. Do not invoke individual agents directly.
 
-3. **Task Manager detects and resets stale tasks:**
-   - Any task marked `in-progress` is stale (session was interrupted)
-   - Reset stale tasks to `pending`
-   - Log: "Reset stale task T00X to pending"
+---
 
-4. **Task Manager finds next actionable task:**
-   - First `pending` task with all dependencies `complete`
-   - Or first `blocked` task whose blocker is now `complete`
+### Component Commands
 
-5. **Task Manager invokes appropriate agent:**
-   - Route task to correct agent based on task type
-   - Provide context from task list and previous work
-   - Monitor agent result
+Component commands require `COMPONENTS.md` at the project root. If absent: "No COMPONENTS.md found. Create one with `add component` or manually. See `COMPONENTS.EXAMPLE.md` for the expected format."
 
-6. **Task Manager updates task list immediately:**
-   - Mark completed tasks as `complete`
-   - Handle blocked tasks (create new tasks, update dependencies)
-   - Update `project-docs/activity.log`
+| Canonical Command | Also Recognized As |
+|-------------------|--------------------|
+| `list components` | "show all components", "what components exist", "show components" |
+| `target {id}` | "work on {id}", "switch to {id}", "focus on {id}" |
+| `show component {id}` | "tell me about {id}", "what is {id}", "describe {id}" |
+| `add component` | "register a component", "new component", "create component" |
+| `impact {id}` | "what depends on {id}", "blast radius of {id}", "who uses {id}" |
+| `untarget` | "clear component", "stop targeting", "unfocus" |
 
-7. **Repeat until:**
-   - All tasks complete, OR
-   - User intervention required, OR
-   - Exit criteria check needed for phase transition
+### `list components`
 
-**Important:** The user should NOT invoke individual agents directly when continuing work. Always use `continue` to let Task Manager coordinate.
+1. Check `COMPONENTS.md` exists, read and validate manifest
+2. Display table with columns: ID, Name, Type, Path, Status
+3. Apply type filter if specified (e.g., "list agent components")
+4. Display count summary by type
+
+### `target {id}`
+
+1. Look up `## {id}` in `COMPONENTS.md`. If not found, show valid IDs and suggest closest match
+2. Extract all fields from component's detail section
+3. Write `**Component:** {id}` to Current Work (after Name, before Status)
+4. Write `### Component Context` sub-section with hydrated metadata
+5. Display component details. If already targeted, previous target is replaced silently
+
+### `show component {id}`
+
+1. Look up `## {id}` in `COMPONENTS.md`. If not found, show valid IDs
+2. Extract all fields, compute reverse dependencies, check for associated docs
+3. Display full component details including dependencies and dependents
+
+### `add component`
+
+1. If `COMPONENTS.md` doesn't exist, offer to create it
+2. Prompt for required fields: ID (`[a-z][a-z0-9-]{0,39}`), Name, Type (frontend/backend/library/agent/gateway/infrastructure/other), Path, Description
+3. Prompt for optional fields: Language, Dependencies, Deployment, Port, Owner
+4. Validate ID uniqueness and format, warn on unknown dependency references
+5. Add row to Summary table and new H2 section to `COMPONENTS.md`
+6. Ask about scaffolding the source directory
+
+### `impact {id}`
+
+1. Look up `## {id}` in `COMPONENTS.md`. If not found, show valid IDs
+2. BFS on reverse dependency graph: find direct dependents, then transitive dependents (track visited nodes for cycles)
+3. Display direct and transitive dependents with total count
+
+### `untarget`
+
+1. If no `**Component:**` field in Current Work, display "No component is currently targeted."
+2. Remove `**Component:**` line and `### Component Context` sub-section, preserve all other fields
+
+### Component Context Rules
+
+When a component is targeted, Current Work gains `**Component:** {id}` (after Name, before Status) and a `### Component Context` sub-section with a metadata table from COMPONENTS.md.
+
+1. Field is omitted entirely when no component is targeted (backward compatible)
+2. Only fields with values are included
+3. When a different component is targeted, previous context is replaced
+4. `untarget` removes both the field and the sub-section
+5. All agents read this section from CLAUDE.md to scope work — Developer uses Path/Language/Dependencies, Test agents use Path/Language, reviewers use Path/Dependencies, Task Manager uses all fields
 
 ---
 
 ## Model Configuration
 
-**Default Model:** `opus`
+**Default Model:** `opus` — Override in agent YAML front-matter with `model: sonnet` or `model: haiku`.
 
-Agents inherit the default model unless explicitly overridden in their YAML front-matter.
-
-### Override Mechanism
-
-In agent YAML front-matter:
-```yaml
-model: opus      # Use opus (default)
-model: sonnet    # Override to sonnet
-model: haiku     # Override to haiku
-```
-
-### Model Selection Guidance
-
-| Model | Use For | Example Agents |
-|-------|---------|----------------|
-| opus | Complex reasoning, architecture, security analysis | Architect, Security Design, Requirements |
-| sonnet | Standard coding, implementation, documentation | Developer, Test Coder, Documentation |
-| haiku | Exploration, quick searches, simple transformations | Explore agents, simple validation |
-
-### Recommendations by Agent Type
-
-| Agent Category | Recommended Model | Rationale |
-|----------------|-------------------|-----------|
-| Architecture & Security | opus | Requires deep reasoning about trade-offs |
-| Design Agents | opus | Complex design decisions |
-| Developer | sonnet | Standard implementation work |
-| Test Agents | sonnet | Test implementation and execution |
-| Code Reviewers | opus | Thorough analysis required |
-| Documentation | sonnet | Straightforward content generation |
-| Task Manager | opus | Orchestration and decision-making |
+| Agent Category | Model | Rationale |
+|----------------|-------|-----------|
+| Architecture, Security, Design, Code Reviewers, Task Manager | opus | Complex reasoning and trade-offs |
+| Developer, Test Coder, Test Runner, Documentation | sonnet | Standard implementation work |
+| Exploration, simple validation | haiku | Quick searches, simple transforms |
 
 ---
 
 ## Activity Log
 
-Provides traceability of all agent actions during workflow execution. Designed for machine parsing to enable graphical visualization of requirement fulfillment.
-
-### Log Location & Format
+Traceability of all agent actions. Designed for machine parsing. Full schema and writer protocol in task-manager.md.
 
 - **File:** `project-docs/activity.log`
-- **Format:** JSON Lines (JSONL) - one JSON object per line
-- **Encoding:** UTF-8
-
-### Log Entry Schema
-
-Each log entry is a single-line JSON object:
-
-```json
-{
-  "log_seq": 1,
-  "work_seq": "002",
-  "timestamp": "2024-03-15T10:30:00Z",
-  "agent": "developer",
-  "action": "START",
-  "phase": "implementation",
-  "parent_log_seq": null,
-  "requirements": ["REQ-002-FN-001", "REQ-002-FN-002"],
-  "task_id": "TASK-001",
-  "details": "Implementing user authentication API",
-  "files_created": [],
-  "files_modified": [],
-  "decisions": [],
-  "errors": [],
-  "duration_ms": null
-}
-```
-
-### Field Definitions
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `log_seq` | integer | Yes | Log entry sequence number, monotonically increasing (1, 2, 3...) |
-| `work_seq` | string | Yes | Work item sequence from CLAUDE.md Current Work (e.g., "001", "002") |
-| `timestamp` | string | Yes | ISO 8601 timestamp with timezone (UTC preferred) |
-| `agent` | string | Yes | Agent name (e.g., "developer", "architect", "test-runner") |
-| `action` | string | Yes | Action type (see Action Types below) |
-| `phase` | string | Yes | Workflow phase (see Phase Values below) |
-| `parent_log_seq` | integer/null | Yes | Log sequence of parent entry (for nested agent calls), null if top-level |
-| `requirements` | array | Yes | Array of REQ-* IDs being addressed, empty array if none |
-| `task_id` | string/null | Yes | Task list item reference (e.g., "TASK-001"), null if not task-related |
-| `details` | string | Yes | Human-readable description of the activity |
-| `files_created` | array | Yes | Array of file paths created during this activity |
-| `files_modified` | array | Yes | Array of file paths modified during this activity |
-| `decisions` | array | Yes | Array of key decisions made, empty if none |
-| `errors` | array | Yes | Array of error messages, empty if none |
-| `duration_ms` | integer/null | Yes | Duration in milliseconds (populated on COMPLETE/ERROR entries) |
+- **Format:** JSONL (one JSON object per line, UTF-8)
+- **Sole Writer:** Task Manager (adds `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, `duration_ms` to agent entries)
 
 ### Action Types
 
@@ -605,85 +338,13 @@ Each log entry is a single-line JSON object:
 
 ### Phase Values
 
-| Phase | Description |
-|-------|-------------|
-| `requirements` | Requirements elicitation and documentation |
-| `architecture` | Architectural decisions and ADRs |
-| `design` | Design document creation |
-| `planning` | Test planning and task creation |
-| `implementation` | Code implementation |
-| `review` | Code review |
-| `testing` | Test execution and debugging |
-| `documentation` | Documentation creation/updates |
-| `deployment` | Deployment and infrastructure |
-
-### Log Entry Block Format
-
-Agents emit log entries in this JSON format for Task Manager to append:
-
-```json
-<log-entry>
-{
-  "agent": "agent-name",
-  "action": "COMPLETE",
-  "phase": "implementation",
-  "requirements": ["REQ-XXX-FN-001"],
-  "task_id": "TASK-001",
-  "details": "Brief description of what was done",
-  "files_created": ["src/new-file.ts"],
-  "files_modified": ["src/existing-file.ts"],
-  "decisions": ["Chose X over Y because Z"],
-  "errors": []
-}
-</log-entry>
-```
-
-**Note:** Agents do NOT include `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, or `duration_ms` - Task Manager adds these when writing to the log.
-
-### Log Writer Responsibility
-
-Task Manager is the sole writer to `activity.log`:
-
-1. **Initialize Log** - Create `project-docs/activity.log` if it doesn't exist
-2. **Track Log Sequence** - Maintain global log_seq counter across all entries
-3. **Add Work Sequence** - Read current work_seq from CLAUDE.md Current Work section
-4. **Add Metadata** - Add `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, `duration_ms` to agent entries
-5. **Validate Entries** - Ensure all required fields are present
-6. **Append Atomically** - Write complete JSON line (no partial writes)
-
-### Example Log Entries
-
-```jsonl
-{"log_seq":1,"work_seq":"002","timestamp":"2024-03-15T10:30:00Z","agent":"task-manager","action":"START","phase":"implementation","parent_log_seq":null,"requirements":[],"task_id":null,"details":"Beginning implementation phase","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
-{"log_seq":2,"work_seq":"002","timestamp":"2024-03-15T10:30:05Z","agent":"developer","action":"START","phase":"implementation","parent_log_seq":1,"requirements":["REQ-002-FN-001","REQ-002-FN-002"],"task_id":"TASK-001","details":"Implementing user authentication API","files_created":[],"files_modified":[],"decisions":[],"errors":[],"duration_ms":null}
-{"log_seq":3,"work_seq":"002","timestamp":"2024-03-15T10:35:00Z","agent":"developer","action":"FILE_CREATE","phase":"implementation","parent_log_seq":2,"requirements":["REQ-002-FN-001"],"task_id":"TASK-001","details":"Created authentication handler","files_created":["src/auth/handler.go"],"files_modified":[],"decisions":["Using JWT for stateless auth"],"errors":[],"duration_ms":null}
-{"log_seq":4,"work_seq":"002","timestamp":"2024-03-15T10:45:00Z","agent":"developer","action":"COMPLETE","phase":"implementation","parent_log_seq":1,"requirements":["REQ-002-FN-001","REQ-002-FN-002"],"task_id":"TASK-001","details":"User authentication API implemented","files_created":["src/auth/handler.go","src/auth/middleware.go"],"files_modified":["src/routes.go"],"decisions":["Using JWT for stateless auth","Added rate limiting middleware"],"errors":[],"duration_ms":895000}
-```
-
-### Visualization Capabilities
-
-This log format enables:
-
-| Visualization | Fields Used |
-|---------------|-------------|
-| **Requirement Timeline** | `timestamp`, `requirements`, `action` |
-| **Agent Activity Graph** | `agent`, `parent_log_seq`, `log_seq` |
-| **Phase Swimlanes** | `phase`, `timestamp`, `agent` |
-| **Requirement Coverage Heatmap** | `requirements`, `action` |
-| **File Dependency Graph** | `files_created`, `files_modified`, `agent` |
-| **Blocked/Unblocked Analysis** | `action` (BLOCKED/UNBLOCKED), `duration_ms` |
-| **Task Progress Gantt** | `task_id`, `timestamp`, `action`, `duration_ms` |
-| **Error Analysis** | `errors`, `agent`, `phase` |
-| **Decision Audit Trail** | `decisions`, `agent`, `requirements` |
-| **Work Item Filtering** | `work_seq` - filter all entries by work item |
+`requirements` | `architecture` | `design` | `planning` | `implementation` | `review` | `testing` | `documentation` | `deployment`
 
 ---
 
 ## Parallel Execution
 
-Documents opportunities for concurrent agent execution to improve throughput.
-
-### Design Phase (Supported)
+### Design Phase Waves
 
 | Wave | Agents | Dependencies |
 |------|--------|--------------|
@@ -695,91 +356,28 @@ Documents opportunities for concurrent agent execution to improve throughput.
 
 ### Implementation Phase
 
-Multiple Developer agents can work in parallel when:
-- Components have no shared file dependencies
-- No circular import requirements
-- Independent data models
-
-**Independence Criteria:**
-- Different source directories
-- No shared utility modifications
-- Separate database tables/collections
+Parallel Developer agents when: different source directories, no shared utility modifications, separate database tables.
 
 ### Testing Phase
 
-Parallel test execution when:
-- Test suites target independent modules
-- No shared test fixtures requiring sequential setup
-- Database isolation per test suite
-
-### Documentation Phase
-
-| Parallel Work | Dependencies |
-|---------------|--------------|
-| User docs, Developer docs | None (can run concurrently) |
-| API docs | Requires implementation complete |
-
-### Merge/Integration Points
-
-1. **After Design Phase** - All design docs reviewed for consistency
-2. **After Implementation** - Integration testing validates connections
-3. **After Testing** - Final documentation reflects tested behavior
+Parallel test execution when: independent modules, no shared fixtures requiring sequential setup, database isolation per suite.
 
 ### Conflict Resolution
 
-1. Task Manager detects file conflicts in parallel work
-2. First completion wins; subsequent agents rebase
-3. Conflicting changes escalated to user for resolution
-
-### Task Manager Coordination
-
-- Tracks which agents are running in parallel
-- Maintains dependency graph
-- Blocks dependent work until prerequisites complete
-- Reports parallel execution status to user
+Task Manager detects file conflicts. First completion wins; subsequent agents rebase. Design doc conflicts escalated to user.
 
 ---
 
 ## Exit Criteria
 
-Defines completion requirements for each workflow phase.
+Task Manager validates exit criteria before phase transitions. Blocks if not met. Allows user override with explicit acknowledgment.
 
-### Design Phase Exit Criteria
-
-- [ ] All required design documents created (per Design Document Prefixes)
-- [ ] Requirements traceability complete (all REQ-* IDs mapped)
-- [ ] No unresolved design questions
-- [ ] User approval obtained
-
-### Implementation Phase Exit Criteria
-
-- [ ] All code reviewers pass (no critical/high issues)
-- [ ] No TODO/FIXME markers in committed code
-- [ ] All interfaces implemented (no stubs)
-- [ ] Code compiles/builds without errors
-- [ ] Git commits follow Conventional Commits format
-
-### Testing Phase Exit Criteria
-
-- [ ] Test coverage minimum: 70% (configurable per project)
-- [ ] All tests passing
-- [ ] No critical/high security findings
-- [ ] Performance benchmarks met (if defined in requirements)
-
-### Documentation Phase Exit Criteria
-
-- [ ] User documentation complete
-- [ ] Developer documentation complete
-- [ ] API documentation generated
-- [ ] README updated
-
-### Exit Criteria Enforcement
-
-Task Manager validates exit criteria before phase transitions:
-1. Check all criteria for current phase
-2. Block transition if criteria not met
-3. Report specific failures to user
-4. Allow user override with explicit acknowledgment
+| Phase | Criteria |
+|-------|----------|
+| **Design** | All required design docs created, requirements traceability complete, no unresolved questions, user approval |
+| **Implementation** | All code reviewers pass (no critical/high), no TODO/FIXME in committed code, no stubs, builds without errors, Conventional Commits |
+| **Testing** | Coverage minimum 70% (configurable), all tests passing, no critical/high security findings, performance benchmarks met |
+| **Documentation** | User docs complete, developer docs complete, API docs generated, README updated |
 
 ---
 
@@ -795,7 +393,7 @@ All projects must use Git for version control.
 | `feature/<task-id>-<short-desc>` | Per task/component implementation |
 | `fix/<issue-id>-<short-desc>` | Bug fixes |
 
-### Commit Message Format (Conventional Commits)
+### Commit Format (Conventional Commits)
 
 ```
 <type>(<scope>): <description>
@@ -805,165 +403,75 @@ All projects must use Git for version control.
 Refs: REQ-XXX-FN-NNN
 ```
 
-### Commit Types
-
-| Type | Description |
-|------|-------------|
-| feat | New feature |
-| fix | Bug fix |
-| docs | Documentation only |
-| style | Formatting, no code change |
-| refactor | Code restructure, no behavior change |
-| test | Adding/updating tests |
-| chore | Build, tooling, dependencies |
-
-### Git Workflow
-
-1. **Branch Creation** - Developer creates feature branch when starting task
-2. **Commits** - After implementation passes code review
-3. **Additional Commits** - After test suite passes, after documentation updates
-4. **Push** - Only when Task Manager instructs
-5. **Merge** - Task Manager coordinates merges to main
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ### Conflict Resolution
 
-1. Developer detects conflicts during rebase/merge
-2. Developer resolves conflicts following existing code patterns
-3. Conflicts in design docs escalated to user
-4. Task Manager tracks conflict resolution status
+1. Developer resolves conflicts following existing code patterns
+2. Design doc conflicts escalated to user
+3. Task Manager tracks conflict resolution status
 
 ---
 
 ## Memory Integration (MCP)
 
-All agents have access to a Memory MCP server that provides persistent, semantic knowledge across sessions. This enables long-term learning, cross-work-item consistency, and intelligent decision-making.
+**Required Dependency:** [claude-code-project-memory-mcp](https://github.com/osok/claude-code-project-memory-mcp) MCP server. Install and configure before using this framework.
 
 ### Memory Types
 
 | Type | Purpose | Primary Writers | Primary Readers |
 |------|---------|-----------------|-----------------|
 | `requirements` | Stored requirements with IDs | Requirements Agent | All agents |
-| `design` | Architectural decisions, design patterns, ADRs | Architect, Design Agents | All agents |
-| `code_pattern` | Indexed source code patterns | Developer, Test Coder (via indexing) | Developer, Test Coder |
+| `design` | Architectural decisions, patterns, ADRs | Architect, Design Agents | All agents |
+| `code_pattern` | Indexed source code patterns | Developer, Test Coder | Developer, Test Coder |
 | `component` | Component specs, schemas, API endpoints | Design Agents, Data Agent | All agents |
 | `function` | Function-level code index | Auto-indexed | Developer, Test Coder |
 | `test_history` | Test results, failures, diagnoses, reviews | Test Runner, Test Debugger, Reviewers | Test Agents, Task Manager |
 | `session` | Session state, phase completions | Task Manager | Task Manager |
 | `user_preference` | User preferences and customizations | User interactions | All agents |
 
-### Key Operations by Workflow Phase
-
-| Phase | Operations Used | Purpose |
-|-------|-----------------|---------|
-| **Requirements** | `memory_search`, `memory_add`, `find_duplicates`, `memory_bulk_add` | Search prior requirements, store new ones, detect duplicates |
-| **Architecture** | `memory_search`, `memory_add`, `get_design_context` | Search ADRs, store decisions, retrieve component context |
-| **Design** | `memory_search`, `memory_add`, `get_design_context`, `memory_bulk_add` | Search prior designs, store decisions, store component specs |
-| **Implementation** | `code_search`, `check_consistency`, `index_file`, `get_design_context` | Find patterns, validate consistency, index new code |
-| **Review** | `memory_search`, `trace_requirements`, `code_search` | Trace requirements to code, find vulnerabilities, check integration |
-| **Testing** | `memory_search`, `memory_add`, `validate_fix` | Search test history, store results, validate fixes |
-| **Documentation** | `memory_search`, `get_design_context`, `trace_requirements` | Pull design context, verify documentation completeness |
-
 ### Memory Operations Reference
 
-| Operation | Description | When to Use |
-|-----------|-------------|-------------|
-| `memory_search` | Semantic search across memories | Before any work - find relevant context |
-| `memory_add` | Store a new memory | After completing significant work |
-| `memory_bulk_add` | Store multiple memories | After phase completion with multiple artifacts |
-| `memory_get` | Retrieve by ID | When specific memory ID is known |
-| `memory_update` | Update existing memory | When a decision or status changes |
-| `find_duplicates` | Find near-duplicate memories | Before adding to avoid redundancy |
-| `get_design_context` | Get design decisions for a component | Before implementing or reviewing a component |
-| `trace_requirements` | Trace requirements to implementations | During review, testing, documentation |
-| `code_search` | Find similar code patterns | Before implementing to follow patterns |
-| `check_consistency` | Validate code follows patterns | Before finalizing implementation |
-| `validate_fix` | Validate fix against design | Before approving a fix |
-| `index_file` | Index a source file | After creating new source files |
-| `index_directory` | Index all files in directory | After major implementation phases |
-| `memory_statistics` | Check system health | On workflow start, after upgrades |
-| `normalize_memory` | Deduplicate and consolidate | Periodically, after upgrades |
-| `export_memory` | Export to JSONL | Before upgrades, for backup |
-| `import_memory` | Import from JSONL | After restore, migration |
-| `graph_query` | Cypher query on knowledge graph | Advanced relationship queries |
-| `get_related` | Get related entities | Understanding component relationships |
-| `reindex` | Reindex files by pattern | After bulk code changes |
+| Operation | Description |
+|-----------|-------------|
+| `memory_search` | Semantic search across memories — use before any work |
+| `memory_add` / `memory_bulk_add` | Store new memory(s) — after completing significant work |
+| `memory_get` / `memory_update` | Retrieve or update by ID |
+| `find_duplicates` | Find near-duplicate memories — before adding |
+| `get_design_context` | Get design decisions for a component |
+| `trace_requirements` | Trace requirements to implementations |
+| `code_search` | Find similar code patterns |
+| `check_consistency` | Validate code follows established patterns |
+| `validate_fix` | Validate fix against design |
+| `index_file` / `index_directory` | Index source files for code_search |
+| `memory_statistics` | Check system health |
+| `normalize_memory` | Deduplicate and consolidate |
+| `export_memory` / `import_memory` | Backup and restore |
+| `graph_query` / `get_related` / `reindex` | Advanced graph queries and reindexing |
 
 ### Code Consistency Enforcement
 
-A primary goal of memory integration is ensuring **all code looks like it was designed and developed by one person**. This applies especially to components of the same type (e.g., all backend services, all background agents, all API handlers).
+All code must look like it was designed and developed by one person. Components of the same type must follow identical patterns.
 
-#### Principles
+1. **Pattern Conformance** — Search memory for existing components of the same type; follow their structure exactly
+2. **Base Class Reuse** — Never reimplement functionality from base classes or shared utilities
+3. **Structural Uniformity** — Same file organization, constructors, lifecycle methods, configuration
+4. **Naming Consistency** — Follow conventions established by the first component of that type
 
-1. **Pattern Conformance** - Before writing any new component, search memory for existing components of the same type and follow their structure, naming, error handling, and logging patterns exactly.
-2. **Base Class Reuse** - Never reimplement functionality that exists in a base class, abstract class, or shared utility. Search for base classes and inherited methods before writing new code.
-3. **Structural Uniformity** - Components of the same type must have the same file organization, constructor patterns, lifecycle methods, and configuration approaches.
-4. **Naming Consistency** - Variable names, function names, file names, and class names must follow the same conventions established by the first component of that type.
-
-#### Developer Agent Enforcement
-
-Before implementing any component, the Developer Agent MUST:
-
-1. **Find the archetype** - Search for the first/canonical implementation of the same component type:
-   ```
-   code_search(code_snippet: "class {ComponentType}", language: "{language}")
-   memory_search(query: "{component_type} implementation pattern", memory_types: ["code_pattern"])
-   ```
-
-2. **Map the base class** - Identify all base class/parent class methods to understand what is already provided:
-   ```
-   code_search(code_snippet: "class Base{Type}", language: "{language}")
-   ```
-
-3. **Check consistency** - After writing code, validate it follows established patterns:
-   ```
-   check_consistency(code: "{new code}", component_name: "{component}")
-   ```
-
-4. **Never reimplement** - If a method exists in a base class, call `super()` or use the inherited method. If a utility function exists, import and use it. Reimplementing existing functionality is a blocking review failure.
-
-#### Code Reviewer Enforcement
-
-Code Reviewers MUST flag:
-- Components that don't structurally match their archetype
-- Methods that reimplement base class functionality
-- Naming that deviates from established patterns
-- File organization that differs from sibling components
-- Error handling that doesn't follow the project pattern
-- Logging that uses different formats or levels than siblings
-
-#### Memory Operations for Consistency
-
-| Operation | Purpose |
-|-----------|---------|
-| `code_search` | Find archetype implementations and base classes |
-| `check_consistency` | Validate new code against established patterns |
-| `memory_search(memory_types: ["code_pattern"])` | Find documented coding patterns |
-| `get_design_context` | Retrieve component architecture including inheritance |
-| `index_file` | Index new code so future components can match it |
+See developer.md for detailed enforcement steps. Code reviewers flag structural mismatches, base class reimplementation, and naming/organization deviations.
 
 ### Memory Best Practices
 
-1. **Search before creating** - Always check if a memory already exists before adding
-2. **Use specific queries** - Include requirement IDs, component names, and specific terms
-3. **Store actionable data** - Memories should contain enough detail to be useful without reading source files
-4. **Include metadata** - Always add `work_seq`, `category`, and relevant identifiers
-5. **Bulk add when possible** - Use `memory_bulk_add` for multiple related memories
-6. **Index after creating** - New source files should be indexed for `code_search`
-7. **Normalize periodically** - Run `normalize_memory` to prevent duplicate buildup
+- Search before creating (avoid duplicates)
+- Use specific queries with requirement IDs and component names
+- Store actionable data with `work_seq` and category metadata
+- Index new source files after creating them
+- Run `normalize_memory` periodically
 
 ### Memory Initialization
 
-When a project is first set up (via `initialize` command), Task Manager should:
-
-1. Check `memory_statistics()` for system health
-2. Index the codebase: `index_directory(directory_path: ".", patterns: ["**/*.{lang}"])`
-3. Store project overview as a `design` memory
-4. Store user preferences as `user_preference` memories
-
-When resuming work (via `continue` command), Task Manager should:
-
-1. Search for last session state: `memory_search(query: "session state", memory_types: ["session"])`
-2. Load relevant context for current phase
+**On `initialize`:** Check `memory_statistics()`, index codebase with `index_directory`, store project overview and user preferences.
+**On `continue`:** Search for last session state (`memory_types: ["session"]`), load context for current phase.
 
 ---
 

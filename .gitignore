@@ -1,13 +1,15 @@
-# Project-specific sequence documents (requirements, designs, task lists)
-# These are generated per-project and should not be in the template
-project-docs/[0-9][0-9][0-9]-*.md
-
-# Keep template files
-!project-docs/schemas/_template-schema.md
+# Project-generated documents (per-project, not part of template)
+requirement-docs/*.md
+!requirement-docs/_sample-requirements.md
+!requirement-docs/README.md
+design-docs/*.md
+developer-docs/*.md
+project-docs/*.md
+project-docs/*.log
+project-docs/adrs/*.md
 !project-docs/adrs/_template-adr.md
-
-# Generated design docs (project-specific)
-design-docs/[0-9][0-9]-*.md
+project-docs/schemas/*.md
+!project-docs/schemas/_template-schema.md
 
 # OS files
 .DS_Store
