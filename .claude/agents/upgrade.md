@@ -208,6 +208,48 @@ design-templates/
 | CLAUDE.md parse error | Report error, offer to replace entirely (with confirmation) |
 | Agent file invalid YAML | Report error, show what's wrong, ask user how to proceed |
 
+## Memory Integration
+
+Upgrade Agent uses the Memory MCP to preserve project knowledge during framework upgrades and validate post-upgrade integrity.
+
+### Before Upgrade
+
+1. **Search for project-specific customizations:**
+   ```
+   memory_search(query: "project customization user preference configuration", memory_types: ["user_preference", "session"])
+   ```
+   - Identify customizations that must be preserved during upgrade
+
+2. **Export memory** as backup before upgrade:
+   ```
+   export_memory(output_path: "project-docs/memory-backup-pre-upgrade.jsonl")
+   ```
+   - Safety net in case upgrade affects memory system
+
+### After Upgrade
+
+3. **Check memory system health:**
+   ```
+   memory_statistics()
+   ```
+   - Verify memory system is still operational after upgrade
+
+4. **Reindex updated agent files:**
+   ```
+   index_directory(directory_path: ".claude/agents", patterns: ["**/*.md"])
+   ```
+   - Ensure memory has latest agent definitions indexed
+
+5. **Run normalization** to clean up any duplicates from reindexing:
+   ```
+   normalize_memory(phases: ["dedup", "cleanup"])
+   ```
+
+6. **Store upgrade record:**
+   ```
+   memory_add(memory_type: "session", content: "Framework upgrade completed. Source: {source}. Files updated: {count}. Files added: {count}. Project content preserved: {yes/no}.", metadata: {"category": "upgrade"})
+   ```
+
 ## Constraints
 
 - **Never delete local-only files** - User may have custom agents or content

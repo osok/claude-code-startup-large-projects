@@ -834,6 +834,139 @@ Refs: REQ-XXX-FN-NNN
 
 ---
 
+## Memory Integration (MCP)
+
+All agents have access to a Memory MCP server that provides persistent, semantic knowledge across sessions. This enables long-term learning, cross-work-item consistency, and intelligent decision-making.
+
+### Memory Types
+
+| Type | Purpose | Primary Writers | Primary Readers |
+|------|---------|-----------------|-----------------|
+| `requirements` | Stored requirements with IDs | Requirements Agent | All agents |
+| `design` | Architectural decisions, design patterns, ADRs | Architect, Design Agents | All agents |
+| `code_pattern` | Indexed source code patterns | Developer, Test Coder (via indexing) | Developer, Test Coder |
+| `component` | Component specs, schemas, API endpoints | Design Agents, Data Agent | All agents |
+| `function` | Function-level code index | Auto-indexed | Developer, Test Coder |
+| `test_history` | Test results, failures, diagnoses, reviews | Test Runner, Test Debugger, Reviewers | Test Agents, Task Manager |
+| `session` | Session state, phase completions | Task Manager | Task Manager |
+| `user_preference` | User preferences and customizations | User interactions | All agents |
+
+### Key Operations by Workflow Phase
+
+| Phase | Operations Used | Purpose |
+|-------|-----------------|---------|
+| **Requirements** | `memory_search`, `memory_add`, `find_duplicates`, `memory_bulk_add` | Search prior requirements, store new ones, detect duplicates |
+| **Architecture** | `memory_search`, `memory_add`, `get_design_context` | Search ADRs, store decisions, retrieve component context |
+| **Design** | `memory_search`, `memory_add`, `get_design_context`, `memory_bulk_add` | Search prior designs, store decisions, store component specs |
+| **Implementation** | `code_search`, `check_consistency`, `index_file`, `get_design_context` | Find patterns, validate consistency, index new code |
+| **Review** | `memory_search`, `trace_requirements`, `code_search` | Trace requirements to code, find vulnerabilities, check integration |
+| **Testing** | `memory_search`, `memory_add`, `validate_fix` | Search test history, store results, validate fixes |
+| **Documentation** | `memory_search`, `get_design_context`, `trace_requirements` | Pull design context, verify documentation completeness |
+
+### Memory Operations Reference
+
+| Operation | Description | When to Use |
+|-----------|-------------|-------------|
+| `memory_search` | Semantic search across memories | Before any work - find relevant context |
+| `memory_add` | Store a new memory | After completing significant work |
+| `memory_bulk_add` | Store multiple memories | After phase completion with multiple artifacts |
+| `memory_get` | Retrieve by ID | When specific memory ID is known |
+| `memory_update` | Update existing memory | When a decision or status changes |
+| `find_duplicates` | Find near-duplicate memories | Before adding to avoid redundancy |
+| `get_design_context` | Get design decisions for a component | Before implementing or reviewing a component |
+| `trace_requirements` | Trace requirements to implementations | During review, testing, documentation |
+| `code_search` | Find similar code patterns | Before implementing to follow patterns |
+| `check_consistency` | Validate code follows patterns | Before finalizing implementation |
+| `validate_fix` | Validate fix against design | Before approving a fix |
+| `index_file` | Index a source file | After creating new source files |
+| `index_directory` | Index all files in directory | After major implementation phases |
+| `memory_statistics` | Check system health | On workflow start, after upgrades |
+| `normalize_memory` | Deduplicate and consolidate | Periodically, after upgrades |
+| `export_memory` | Export to JSONL | Before upgrades, for backup |
+| `import_memory` | Import from JSONL | After restore, migration |
+| `graph_query` | Cypher query on knowledge graph | Advanced relationship queries |
+| `get_related` | Get related entities | Understanding component relationships |
+| `reindex` | Reindex files by pattern | After bulk code changes |
+
+### Code Consistency Enforcement
+
+A primary goal of memory integration is ensuring **all code looks like it was designed and developed by one person**. This applies especially to components of the same type (e.g., all backend services, all background agents, all API handlers).
+
+#### Principles
+
+1. **Pattern Conformance** - Before writing any new component, search memory for existing components of the same type and follow their structure, naming, error handling, and logging patterns exactly.
+2. **Base Class Reuse** - Never reimplement functionality that exists in a base class, abstract class, or shared utility. Search for base classes and inherited methods before writing new code.
+3. **Structural Uniformity** - Components of the same type must have the same file organization, constructor patterns, lifecycle methods, and configuration approaches.
+4. **Naming Consistency** - Variable names, function names, file names, and class names must follow the same conventions established by the first component of that type.
+
+#### Developer Agent Enforcement
+
+Before implementing any component, the Developer Agent MUST:
+
+1. **Find the archetype** - Search for the first/canonical implementation of the same component type:
+   ```
+   code_search(code_snippet: "class {ComponentType}", language: "{language}")
+   memory_search(query: "{component_type} implementation pattern", memory_types: ["code_pattern"])
+   ```
+
+2. **Map the base class** - Identify all base class/parent class methods to understand what is already provided:
+   ```
+   code_search(code_snippet: "class Base{Type}", language: "{language}")
+   ```
+
+3. **Check consistency** - After writing code, validate it follows established patterns:
+   ```
+   check_consistency(code: "{new code}", component_name: "{component}")
+   ```
+
+4. **Never reimplement** - If a method exists in a base class, call `super()` or use the inherited method. If a utility function exists, import and use it. Reimplementing existing functionality is a blocking review failure.
+
+#### Code Reviewer Enforcement
+
+Code Reviewers MUST flag:
+- Components that don't structurally match their archetype
+- Methods that reimplement base class functionality
+- Naming that deviates from established patterns
+- File organization that differs from sibling components
+- Error handling that doesn't follow the project pattern
+- Logging that uses different formats or levels than siblings
+
+#### Memory Operations for Consistency
+
+| Operation | Purpose |
+|-----------|---------|
+| `code_search` | Find archetype implementations and base classes |
+| `check_consistency` | Validate new code against established patterns |
+| `memory_search(memory_types: ["code_pattern"])` | Find documented coding patterns |
+| `get_design_context` | Retrieve component architecture including inheritance |
+| `index_file` | Index new code so future components can match it |
+
+### Memory Best Practices
+
+1. **Search before creating** - Always check if a memory already exists before adding
+2. **Use specific queries** - Include requirement IDs, component names, and specific terms
+3. **Store actionable data** - Memories should contain enough detail to be useful without reading source files
+4. **Include metadata** - Always add `work_seq`, `category`, and relevant identifiers
+5. **Bulk add when possible** - Use `memory_bulk_add` for multiple related memories
+6. **Index after creating** - New source files should be indexed for `code_search`
+7. **Normalize periodically** - Run `normalize_memory` to prevent duplicate buildup
+
+### Memory Initialization
+
+When a project is first set up (via `initialize` command), Task Manager should:
+
+1. Check `memory_statistics()` for system health
+2. Index the codebase: `index_directory(directory_path: ".", patterns: ["**/*.{lang}"])`
+3. Store project overview as a `design` memory
+4. Store user preferences as `user_preference` memories
+
+When resuming work (via `continue` command), Task Manager should:
+
+1. Search for last session state: `memory_search(query: "session state", memory_types: ["session"])`
+2. Load relevant context for current phase
+
+---
+
 ## Working Principles
 
 - Blunt, honest feedback over false agreement

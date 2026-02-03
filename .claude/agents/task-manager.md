@@ -254,6 +254,96 @@ When Test Runner reports categorized failures:
 
 Routing chain: try first agent, if issue persists, escalate to next.
 
+## Memory Integration
+
+Task Manager uses the Memory MCP to maintain long-term project knowledge across sessions and improve orchestration decisions.
+
+### On Workflow Start (begin/continue)
+
+1. **Search for session context:**
+   ```
+   memory_search(query: "session state work sequence {seq} {short_name}", memory_types: ["session"])
+   ```
+   - Retrieve last session state to detect where work left off
+   - Check for stale in-progress tasks from interrupted sessions
+
+2. **Search for prior decisions:**
+   ```
+   memory_search(query: "architectural decisions {short_name}", memory_types: ["design"])
+   ```
+   - Load context from prior phases to inform current routing
+
+3. **Check system health:**
+   ```
+   memory_statistics()
+   ```
+   - Verify memory system is operational before relying on it
+
+### During Workflow Execution
+
+4. **Before invoking each agent**, search for relevant context:
+   ```
+   get_design_context(component_name: "{component being worked on}")
+   ```
+   - Provide retrieved context to the invoked agent
+
+5. **After each phase transition**, store session state:
+   ```
+   memory_add(memory_type: "session", content: "Phase {phase} completed for Seq {seq} {short_name}. Tasks completed: {list}. Next phase: {next}.")
+   ```
+
+6. **Track requirement coverage** periodically:
+   ```
+   trace_requirements(requirement_text: "REQ-{SEQ}-FN-{NNN}: {description}")
+   ```
+   - Verify requirements are being addressed by implementation
+
+### On Workflow Completion
+
+7. **Store completion summary:**
+   ```
+   memory_add(memory_type: "session", content: "Work Seq {seq} {short_name} completed. All tasks done. Phases completed: {list}. Key decisions: {decisions}.")
+   ```
+
+8. **Index new source files** created during implementation:
+   ```
+   index_directory(directory_path: "{src_directory}", patterns: ["**/*.{lang}"])
+   ```
+
+### Code Consistency Gate
+
+Task Manager enforces code consistency as a **mandatory quality gate** during the review phase.
+
+9. **After Developer completes a task**, run consistency check before proceeding:
+   ```
+   check_consistency(code: "{implemented code}", component_name: "{component}")
+   ```
+   - If the check finds pattern deviations, route back to Developer with specific instructions
+   - Developer MUST fix consistency issues before code review begins
+
+10. **After code review**, verify consistency findings are addressed:
+    - If Integration Reviewer reports consistency violations or base class reimplementations, these are **blocking issues** (same severity as stubs)
+    - Create fix tasks for each violation and route back to Developer
+    - Do NOT proceed to testing until consistency issues are resolved
+
+11. **Store archetype patterns** when the first component of a type is completed:
+    ```
+    memory_add(memory_type: "code_pattern", content: "Archetype established: {component_type}. File: {path}. This is the reference implementation - all future {component_type} components must match this structure.", metadata: {"pattern_type": "archetype", "component_type": "{type}", "work_seq": "{seq}"})
+    ```
+
+### Decision Points
+
+12. **Before routing to agents**, search for similar past issues:
+   ```
+   memory_search(query: "{failure description or gap type}", memory_types: ["test_history", "session"])
+   ```
+   - Use past failure patterns to route more effectively
+
+10. **Validate fixes** before marking tasks complete:
+    ```
+    validate_fix(fix_description: "{what was fixed}", code_changes: "{summary of changes}")
+    ```
+
 ## Constraints
 
 - **Task Manager is the ONLY writer to the task list** - other agents return structured output
