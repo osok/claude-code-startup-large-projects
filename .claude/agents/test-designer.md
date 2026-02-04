@@ -123,6 +123,56 @@ Test Designer uses the Memory MCP to create comprehensive test plans informed by
    memory_add(memory_type: "test_history", content: "Test plan for Seq {seq}: Unit tests: {count}. Integration tests: {count}. E2E tests: {count}. Coverage target: {target}%. Requirements covered: {list}.", metadata: {"category": "test-plan", "work_seq": "{seq}"})
    ```
 
+## Code Review Finding Assessment
+
+When invoked by Task Manager after a code review phase, Test Designer assesses whether findings require test changes.
+
+### Inputs
+- Findings tracker (list of all code review findings with IDs, descriptions, severities, and routed agents)
+- Current test plan (`{seq}-test-plan-{name}.md`)
+- Review report files from all three reviewers
+
+### Assessment Process
+
+1. **For each finding**, determine test impact:
+
+| Finding Type | Test Impact | Action |
+|-------------|-------------|--------|
+| Missing feature (requirements gap) | New tests needed | Add test cases for the feature |
+| Security vulnerability | Regression test needed | Add security-specific test to prevent recurrence |
+| Stub/incomplete implementation | Existing tests may need update | Review if stubbed code was covered by tests returning mock data |
+| Wiring gap | Integration test needed | Add integration test covering the full chain |
+| Consistency violation | Usually no test change | Unless behavior differs from archetype |
+| Design gap | New tests after design complete | Flag as pending — tests created after design is done |
+| Data model change | Update test data and assertions | Modify tests referencing changed schema |
+
+2. **Update the test plan** with a new section:
+
+```markdown
+## Code Review Finding Tests
+
+| Finding ID | Test Impact | New/Modified Tests | Rationale |
+|------------|-------------|-------------------|-----------|
+| CR-001 | New tests | UT-015, IT-008 | Export feature was missing entirely |
+| CR-002 | Regression test | UT-016 | SQL injection must never recur |
+| CR-003 | Pending design | TBD | Waiting for batch processing design |
+| CR-004 | Modify existing | IT-003 | Was testing against stub, needs real assertions |
+```
+
+3. **Return assessment** to Task Manager with any new Test Coder tasks needed
+
+### Return Format for Finding Assessment
+
+```
+## Task Result
+status: complete | blocked | failed
+tests_need_update: true | false
+new_test_count: {number of new tests to create}
+modified_test_count: {number of existing tests to update}
+pending_design_count: {number of tests waiting on design completion}
+notes: {summary of test impact assessment}
+```
+
 ## Constraints
 
 - Every functional requirement must have at least one test

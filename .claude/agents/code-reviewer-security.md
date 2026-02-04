@@ -259,6 +259,54 @@ Security Reviewer uses the Memory MCP to perform context-aware security reviews 
 - `decisions`: Vulnerability classifications and severity ratings
 - `errors`: Array of security findings with severity and location
 
+## Re-Review Mode
+
+When invoked with `re_review: true`, the reviewer operates in verification mode:
+
+### Inputs for Re-Review
+- Original security review report path (from prior review)
+- Findings tracker with resolutions (what was fixed and how)
+- All source code (current state)
+
+### Re-Review Process
+
+1. **Load the original security review report** and findings tracker
+2. **For each original finding**, verify:
+   - The vulnerability is actually remediated (not just moved or masked)
+   - The fix follows security best practices (not a workaround)
+   - The resolution description in the findings tracker is accurate
+3. **Mark each finding** as:
+   - `verified` — Vulnerability confirmed fixed
+   - `still_open` — Vulnerability still exists or fix is insufficient (include explanation)
+4. **Scan for new vulnerabilities** introduced by the fixes:
+   - Review all files modified during the fix phase against OWASP checklist
+   - Check that fixes didn't introduce new attack vectors
+   - Pay special attention to regression of previously-fixed issues
+5. **Create updated review report** as `{seq}-security-re-review-{short-name}.md`
+
+### Re-Review Report Addendum
+
+Append to the standard report format:
+
+```markdown
+## Re-Review Verification
+
+### Verified Findings
+| Finding ID | Original Vulnerability | Resolution | Verified |
+|------------|----------------------|------------|----------|
+| CR-002 | SQL injection in query.ts:42 | Replaced with parameterized query | Yes |
+
+### Still Open Findings
+| Finding ID | Original Vulnerability | Attempted Resolution | Why Still Open |
+|------------|----------------------|---------------------|----------------|
+| CR-006 | Hardcoded API key | Moved to env var but not in .env.example | Key still exposed in git history |
+
+### New Findings (Introduced by Fixes)
+| Finding ID | Severity | Description | File | Recommendation |
+|------------|----------|-------------|------|----------------|
+| CR-011 | high | New endpoint missing auth middleware | src/routes/export.ts:15 | Add authMiddleware to route |
+```
+
 ## Return Format
 
 When invoked by Task Manager, end your response with:
@@ -266,12 +314,17 @@ When invoked by Task Manager, end your response with:
 ```
 ## Task Result
 status: complete | blocked | failed
+re_review: true | false
 vulnerabilities_found: true | false
 critical_count: {number}
 high_count: {number}
 medium_count: {number}
+verified_count: {number of original findings verified as fixed — re-review only}
+still_open_count: {number of original findings still not fixed — re-review only}
+new_finding_count: {number of new issues found during re-review — re-review only}
 findings: {brief list of top issues}
 notes: {summary and recommendations}
 ```
 
 If `critical_count > 0` or `high_count > 0`, Task Manager MUST create tasks to fix these before proceeding to testing.
+On re-review, if `still_open_count > 0` or `new_finding_count > 0`, Task Manager will create new fix tasks and schedule another re-review.

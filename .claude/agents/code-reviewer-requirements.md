@@ -190,6 +190,54 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
 - `decisions`: Gap identification and classification decisions
 - `errors`: Array of requirement gaps found with details
 
+## Re-Review Mode
+
+When invoked with `re_review: true`, the reviewer operates in verification mode:
+
+### Inputs for Re-Review
+- Original review report path (from prior review)
+- Findings tracker with resolutions (what was fixed and how)
+- All source code (current state)
+
+### Re-Review Process
+
+1. **Load the original review report** and findings tracker
+2. **For each original finding**, verify:
+   - The code change actually addresses the finding
+   - The fix is complete (not partial)
+   - The resolution description in the findings tracker is accurate
+3. **Mark each finding** as:
+   - `verified` — Fix confirmed, finding is resolved
+   - `still_open` — Fix is incomplete or doesn't address the finding (include explanation)
+4. **Scan for new issues** introduced by the fixes:
+   - Review all files modified during the fix phase
+   - Apply the same review checklist as the initial review
+   - Report any new findings with new CR-IDs
+5. **Create updated review report** as `{seq}-requirements-re-review-{short-name}.md`
+
+### Re-Review Report Addendum
+
+Append to the standard report format:
+
+```markdown
+## Re-Review Verification
+
+### Verified Findings
+| Finding ID | Original Issue | Resolution | Verified |
+|------------|---------------|------------|----------|
+| CR-001 | Missing user export | Implemented in src/services/export.ts | Yes |
+
+### Still Open Findings
+| Finding ID | Original Issue | Attempted Resolution | Why Still Open |
+|------------|---------------|---------------------|----------------|
+| CR-003 | No batch processing design | Design doc created but incomplete | Missing error handling flow |
+
+### New Findings (Introduced by Fixes)
+| Finding ID | Severity | Description | File | Recommendation |
+|------------|----------|-------------|------|----------------|
+| CR-010 | medium | Export endpoint missing pagination | src/routes/export.ts:28 | Add limit/offset params |
+```
+
 ## Return Format
 
 When invoked by Task Manager, end your response with:
@@ -197,10 +245,15 @@ When invoked by Task Manager, end your response with:
 ```
 ## Task Result
 status: complete | blocked | failed
+re_review: true | false
 gaps_found: true | false
 gap_count: {number of gaps/issues found}
 critical_gaps: {list any high-priority missing requirements}
+verified_count: {number of original findings verified as fixed — re-review only}
+still_open_count: {number of original findings still not fixed — re-review only}
+new_finding_count: {number of new issues found during re-review — re-review only}
 notes: {summary of review findings}
 ```
 
 If `gaps_found: true`, Task Manager will create tasks to address each gap before proceeding to testing.
+On re-review, if `still_open_count > 0` or `new_finding_count > 0`, Task Manager will create new fix tasks and schedule another re-review.

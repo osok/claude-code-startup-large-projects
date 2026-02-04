@@ -5,12 +5,12 @@
 | ID | Name | Type | Path | Status |
 |----|------|------|------|--------|
 | user-ui | User Frontend | frontend | src/frontends/user-ui | active |
-| admin-ui | Admin Frontend | frontend | src/frontends/admin-ui | active |
-| backend-api | Backend Server | backend | src/backend | active |
-| base-agent-lib | Base Agent Library | library | src/libs/base-agent | active |
+| admin-ui | Admin Frontend | frontend | src/frontends/admin-ui | pending |
+| backend-api | Backend Server | backend | src/backend | complete |
+| base-agent-lib | Base Agent Library | library | src/libs/base-agent | complete |
 | ext-agent-lib | Extended Agent Library | library | src/libs/ext-agent | active |
-| data-processor | Data Processor | agent | src/agents/data-processor | active |
-| notification-sender | Notification Sender | agent | src/agents/notification-sender | active |
+| data-processor | Data Processor | agent | src/agents/data-processor | pending |
+| notification-sender | Notification Sender | agent | src/agents/notification-sender | pending |
 
 ---
 
@@ -42,7 +42,7 @@
 | **Depends On** | backend-api |
 | **Deployment** | S3/CloudFront |
 | **Port** | 3001 |
-| **Status** | active |
+| **Status** | pending |
 
 ---
 
@@ -58,7 +58,7 @@
 | **Depends On** | base-agent-lib |
 | **Deployment** | ECS Fargate |
 | **Port** | 8080 |
-| **Status** | active |
+| **Status** | complete |
 
 ---
 
@@ -71,7 +71,7 @@
 | **Path** | src/libs/base-agent |
 | **Description** | Contains BaseAgent abstract class and common utilities |
 | **Language** | Python |
-| **Status** | active |
+| **Status** | complete |
 
 ---
 
@@ -100,7 +100,7 @@
 | **Language** | Python |
 | **Depends On** | ext-agent-lib, backend-api |
 | **Deployment** | Docker container |
-| **Status** | active |
+| **Status** | pending |
 
 ---
 
@@ -115,4 +115,4 @@
 | **Language** | Python |
 | **Depends On** | ext-agent-lib |
 | **Deployment** | Docker container |
-| **Status** | active |
+| **Status** | pending |

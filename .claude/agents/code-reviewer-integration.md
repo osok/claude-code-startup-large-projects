@@ -328,3 +328,75 @@ notes: {summary of findings}
 ```
 
 If `stubs_found: true`, `wiring_gaps_found: true`, or `consistency_violations_found: true`, Task Manager will create tasks to fix these before proceeding to testing. **Consistency violations and base class reimplementations are blocking issues** with the same severity as stubs.
+On re-review, if `still_open_count > 0` or `new_finding_count > 0`, Task Manager will create new fix tasks and schedule another re-review.
+
+## Re-Review Mode
+
+When invoked with `re_review: true`, the reviewer operates in verification mode:
+
+### Inputs for Re-Review
+- Original integration review report path (from prior review)
+- Findings tracker with resolutions (what was fixed and how)
+- All source code (current state)
+
+### Re-Review Process
+
+1. **Load the original integration review report** and findings tracker
+2. **For each original finding**, verify:
+   - Stubs have been replaced with real implementations (not just comment removal)
+   - Wiring gaps are connected end-to-end (trace the full chain)
+   - Consistency violations are fixed and match the archetype
+   - Base class reimplementations have been replaced with proper inheritance
+   - The resolution description in the findings tracker is accurate
+3. **Mark each finding** as:
+   - `verified` — Fix confirmed, integration chain complete
+   - `still_open` — Fix is incomplete or stub was replaced with another stub (include explanation)
+4. **Scan for new issues** introduced by the fixes:
+   - Review all files modified during the fix phase
+   - Re-trace integration chains that were touched
+   - Check for new stubs, broken wiring, or consistency deviations
+5. **Create updated review report** as `{seq}-integration-re-review-{short-name}.md`
+
+### Re-Review Report Addendum
+
+Append to the standard report format:
+
+```markdown
+## Re-Review Verification
+
+### Verified Findings
+| Finding ID | Original Issue | Resolution | Verified |
+|------------|---------------|------------|----------|
+| CR-004 | Stub in OrderService.create() | Full implementation with DB persistence | Yes |
+
+### Still Open Findings
+| Finding ID | Original Issue | Attempted Resolution | Why Still Open |
+|------------|---------------|---------------------|----------------|
+| CR-007 | Missing event consumer | Consumer created but not registered in DI | Event handler never invoked |
+
+### New Findings (Introduced by Fixes)
+| Finding ID | Type | Description | File | Recommendation |
+|------------|------|-------------|------|----------------|
+| CR-012 | wiring_gap | New OrderService not injected in controller | src/controllers/order.ts:12 | Add to constructor injection |
+```
+
+### Re-Review Return Format
+
+```
+## Task Result
+status: complete | blocked | failed
+re_review: true
+stubs_found: true | false
+stub_count: {number}
+wiring_gaps_found: true | false
+wiring_gap_count: {number}
+consistency_violations_found: true | false
+consistency_violation_count: {number}
+base_class_reimplementations: {number}
+duplicated_utilities: {number}
+verified_count: {number of original findings verified as fixed}
+still_open_count: {number of original findings still not fixed}
+new_finding_count: {number of new issues found during re-review}
+incomplete_chains: {list of feature names with gaps}
+notes: {summary of findings}
+```
