@@ -79,17 +79,18 @@
 | Phase | Step | Agent(s) | Output |
 |-------|------|----------|--------|
 | **Requirements** | 1 | @requirements | Elicit and document requirements (ISO 29148) → `requirement-docs/` |
-| **Architecture** | 2 | @architect | Architectural decisions, ADRs → `project-docs/adrs/` |
-| **Design** | 3 | @requirements-analyzer | Parse requirements structure |
-| | 4 | @design-orchestrator | Coordinate specialized design agents |
-| | 4a | └─ Foundation | @ui-ux-design, @data-design, @security-design (parallel) |
-| | 4b | └─ Core | @library-design, @backend-design (parallel) |
-| | 4c | └─ Application | @frontend-design, @agent-design (parallel) |
-| | 4d | └─ Integration | @integration-design |
-| | 4e | └─ Infrastructure | @infrastructure-design |
+| **Orchestration** | 2 | @task-manager | **Orchestrates all remaining phases (2-17). Sole activity log writer.** |
+| **Architecture** | 3 | @architect | Architectural decisions, ADRs → `project-docs/adrs/` |
+| **Design** | 4 | @requirements-analyzer | Parse requirements structure |
+| | 5 | @design-orchestrator | Coordinate specialized design agents |
+| | 5a | └─ Foundation | @ui-ux-design, @data-design, @security-design (parallel) |
+| | 5b | └─ Core | @library-design, @backend-design (parallel) |
+| | 5c | └─ Application | @frontend-design, @agent-design (parallel) |
+| | 5d | └─ Integration | @integration-design |
+| | 5e | └─ Infrastructure | @infrastructure-design |
 | | | | Output: `design-docs/` with prefixed documents |
-| **Planning** | 5 | @test-designer, @data-agent | Plan tests; define schemas (parallel) |
-| | 6 | @task-manager | Create task list, orchestrate |
+| **Planning** | 6 | @test-designer, @data-agent | Plan tests; define schemas (parallel) |
+| | 6a | @task-manager | Create task list |
 | **Implementation** | 7 | @developer(s) | Implement code |
 | **Review** | 8 | Code reviewers (3) | @code-reviewer-requirements, @code-reviewer-security, @code-reviewer-integration (parallel) |
 | | 8a | @task-manager | Collect findings into tracker (CR-IDs), route each to correct agent |
@@ -220,7 +221,9 @@ Creates a new work item without resetting existing project artifacts.
 1. **Check for requirements** in `requirement-docs/` (skip README.md and _sample-requirements.md)
 2. **If no requirements exist:** Invoke @requirements agent to collect interactively
 3. **If requirements exist:** Present summary, ask user for approval. If no, allow modifications
-4. **Once approved:** Update Current Work, invoke @architect, continue through Unified Agent Workflow (steps 2-17)
+4. **Once approved:** Update Current Work, **invoke @task-manager** to orchestrate all remaining phases (steps 2-17 of Unified Agent Workflow)
+
+**Important:** Task Manager is the orchestrator from step 2 onward. Do NOT invoke @architect or design agents directly — Task Manager invokes them so that all agent actions are logged to the activity log.
 
 ### `continue` Workflow
 

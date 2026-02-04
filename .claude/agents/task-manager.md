@@ -49,13 +49,22 @@ Update the task list **immediately** when:
 ### Initial Start ("begin work")
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
-3. Execute planning phase:
-   - Architect Agent (creates architecture, ADRs)
-   - Requirements Analyzer (parses requirements structure)
-   - Design Orchestrator (coordinates specialized design agents)
-4. Create task list: `project-docs/{seq}-task-list-{short-name}.md` (**IMPORTANT**)
-5. Execute implementation phase (see workflow order below)
-6. Update Claude.md when work complete
+3. **Initialize activity log** (see Activity Log Management below) — this MUST happen before any agent is invoked
+4. Log Task Manager START entry
+5. **Architecture phase** — invoke and log each agent:
+   - Architect Agent (creates architecture, ADRs) — log START before, COMPLETE after
+6. **Design phase** — invoke and log each agent:
+   - Requirements Analyzer (parses requirements structure) — log START/COMPLETE
+   - Design Orchestrator (coordinates specialized design agents) — log START/COMPLETE
+   - Design Orchestrator sub-agents are logged by Design Orchestrator's log entries
+7. **Planning phase** — invoke and log each agent:
+   - Test Designer Agent — log START/COMPLETE
+   - Data Agent — log START/COMPLETE
+8. Create task list: `project-docs/{seq}-task-list-{short-name}.md` (**IMPORTANT**)
+9. Execute implementation phase (see workflow order below) — continue logging all agents
+10. Update Claude.md when work complete
+
+**CRITICAL: Every agent invocation from step 5 onward MUST have a START log entry written BEFORE the agent runs and a COMPLETE/ERROR entry written IMMEDIATELY after.** This includes architecture and design agents, not just implementation agents.
 
 ### Session Resume ("continue")
 1. Read task list for current sequence
@@ -619,16 +628,22 @@ Task Manager is the **sole writer** to `project-docs/activity.log`. This is **MA
 
 ### CRITICAL: Log File Initialization
 
-**On workflow start (before any agent invocation):**
+**On workflow start — BEFORE invoking Architect or any other agent:**
 
-1. Check if `project-docs/activity.log` exists
-2. If NOT exists:
+This is the very first action Task Manager performs. No agent may be invoked until the log is ready.
+
+1. Ensure `project-docs/` directory exists
+2. Check if `project-docs/activity.log` exists
+3. If NOT exists:
    - Create the file
    - Initialize sequence counter to 0
    - Log Task Manager START entry as seq=1
-3. If exists:
+4. If exists:
    - Read last line to get current sequence number
    - Continue from last sequence + 1
+5. Log is now ready — proceed to invoke Architect (architecture phase)
+
+**This ensures all phases are logged, including architecture and design.**
 
 ### Log Format
 
