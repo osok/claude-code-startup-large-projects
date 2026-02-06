@@ -17,6 +17,8 @@ Creates and maintains documentation.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Determine documentation mode needed
 3. Review existing documentation
@@ -145,6 +147,12 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
    memory_add(memory_type: "design", content: "Documentation created for {component}: {doc_types}. Location: {paths}.", metadata: {"category": "documentation", "work_seq": "{seq}"})
    ```
 
+6. **MANDATORY: Index all documentation files created/modified:**
+   ```
+   index_docs(directory_path: "{docs_directory}", patterns: ["**/*.md"])
+   ```
+   - Index user docs, developer docs, and any other documentation created
+
 ## Constraints
 
 - NO dates in documents
@@ -168,6 +176,9 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
 - [ ] API documentation covers all endpoints
 - [ ] Documentation style matches existing project docs
 - [ ] No outdated references remain
+- [ ] **Memory: Searched memory for design context and requirements before documenting**
+- [ ] **Memory: Documentation decisions stored in memory MCP**
+- [ ] **Memory: Created documentation indexed via `index_docs()`**
 
 ## Log Entry Output
 
@@ -185,7 +196,8 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
   "files_created": ["user-docs/guide.md", "developer-docs/api.md"],
   "files_modified": ["README.md"],
   "decisions": ["Documentation decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -197,6 +209,7 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
 - `files_modified`: Updated documentation files (full paths)
 - `decisions`: Array of documentation decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -17,6 +17,8 @@ Manages environment configuration and deployment.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load architecture document for deployment requirements
 3. **Set up project environment FIRST** (see Project Environment Setup below)
@@ -318,6 +320,12 @@ Deployment Agent uses the Memory MCP to maintain environment consistency and tra
    memory_add(memory_type: "design", content: "Deployment for {service}: Platform: {platform}. Configuration: {details}. Environment parity: {status}.", metadata: {"category": "deployment", "work_seq": "{seq}"})
    ```
 
+7. **MANDATORY: Index deployment configuration files:**
+   ```
+   index_file(file_path: "{config_file_path}")
+   ```
+   - Index docker-compose.yml, CDK files, and other deployment configs created or modified
+
 ## Constraints
 
 - **CRITICAL: Always set up project environment before any dependency installs**
@@ -350,6 +358,9 @@ Deployment Agent uses the Memory MCP to maintain environment consistency and tra
 - [ ] Environment variable inventory documented
 - [ ] Environment parity validated
 - [ ] Drift detection report generated (if comparing environments)
+- [ ] **Memory: Searched memory for existing deployment patterns and infrastructure decisions before starting**
+- [ ] **Memory: Environment configurations and deployment decisions stored in memory MCP**
+- [ ] **Memory: Deployment configuration files indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -367,7 +378,8 @@ Deployment Agent uses the Memory MCP to maintain environment consistency and tra
   "files_created": ["docker-compose.yml", ".env-example"],
   "files_modified": [".gitignore"],
   "decisions": ["Deployment decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -379,6 +391,7 @@ Deployment Agent uses the Memory MCP to maintain environment consistency and tra
 - `files_modified`: Updated config files (full paths)
 - `decisions`: Array of deployment decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

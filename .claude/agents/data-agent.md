@@ -17,6 +17,8 @@ Builds and maintains data layer. Schemas are the source of truth.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load design document for current sequence
 3. Review existing schemas in `project-docs/schemas/`
@@ -270,6 +272,13 @@ Data Agent uses the Memory MCP to maintain schema consistency across work items 
    index_file(file_path: "{migration_file_path}", language: "sql")
    ```
 
+7. **MANDATORY: Index schema documents:**
+   ```
+   index_file(file_path: "project-docs/schemas/{source}-schema.md")
+   index_file(file_path: "project-docs/schemas/{source}-data-dictionary.md")
+   ```
+   - Index every schema and data dictionary file created or modified
+
 ## Constraints
 
 - Schemas are authoritative - all developers reference them
@@ -298,6 +307,9 @@ Data Agent uses the Memory MCP to maintain schema consistency across work items 
 - [ ] Migrations tested in dev before staging
 - [ ] Seed data organized by type (base, test, demo, dev)
 - [ ] Requirement references in migration files (where applicable)
+- [ ] **Memory: Searched memory for existing schema patterns and data architecture before starting**
+- [ ] **Memory: Schema definitions and migration records stored in memory MCP**
+- [ ] **Memory: Schema documents and migration files indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -315,7 +327,8 @@ Data Agent uses the Memory MCP to maintain schema consistency across work items 
   "files_created": ["project-docs/schemas/schema.sql", "migrations/001_initial.sql"],
   "files_modified": [],
   "decisions": ["Data architecture decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -327,6 +340,7 @@ Data Agent uses the Memory MCP to maintain schema consistency across work items 
 - `files_modified`: Updated schema files (full paths)
 - `decisions`: Array of data architecture decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

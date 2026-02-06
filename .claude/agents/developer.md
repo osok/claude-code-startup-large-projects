@@ -17,6 +17,8 @@ Implements code following project conventions.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load task assignment from task list
 3. Load design document for implementation details
@@ -432,7 +434,8 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
   "files_created": ["src/new-file.ts"],
   "files_modified": ["src/existing-file.ts"],
   "decisions": ["Key implementation decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -444,6 +447,7 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
 - `files_modified`: Existing files changed (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

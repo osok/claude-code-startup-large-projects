@@ -17,6 +17,8 @@ Reviews all implemented code to verify completeness against the requirements doc
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
 3. Load design document for implementation details
@@ -147,6 +149,11 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
    memory_add(memory_type: "test_history", content: "Requirements review for Seq {seq}: Coverage: {percentage}%. Gaps: {gap_count}. Critical gaps: {list}. Consistency issues: {count}. Fully implemented: {list}.", metadata: {"category": "requirements-review", "work_seq": "{seq}"})
    ```
 
+7. **MANDATORY: Index review report:**
+   ```
+   index_file(file_path: "project-docs/{seq}-requirements-review-{short-name}.md")
+   ```
+
 ## Outputs
 
 - `project-docs/{seq}-requirements-review-{short-name}.md`
@@ -159,6 +166,9 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
 - [ ] All gaps documented with specifics
 - [ ] Recommendations provided for each gap
 - [ ] Report follows standard format
+- [ ] **Memory: Searched memory for requirements, design context, and code patterns during review**
+- [ ] **Memory: Review results stored in memory MCP**
+- [ ] **Memory: Review report indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -176,7 +186,8 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
   "files_created": ["project-docs/001-requirements-review-feature.md"],
   "files_modified": [],
   "decisions": ["Gap identification decisions"],
-  "errors": ["REQ-XXX-FN-003: Missing implementation in src/handler.go"]
+  "errors": ["REQ-XXX-FN-003: Missing implementation in src/handler.go"],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -189,6 +200,7 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
 - `files_modified`: Usually empty for reviewers
 - `decisions`: Gap identification and classification decisions
 - `errors`: Array of requirement gaps found with details
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Re-Review Mode
 

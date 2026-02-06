@@ -17,6 +17,8 @@ Executes tests and reports results.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load testing convention file for test commands
 3. Validate environment is ready
@@ -158,6 +160,7 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
 - [ ] Flaky tests identified and flagged
 - [ ] Performance baseline tracked
 - [ ] All failures reported to Task Manager with category
+- [ ] **Memory: Searched memory for previous test runs and baselines before running tests**
 - [ ] **Memory: Test results stored via `memory_add()` with type "test_result"**
 - [ ] **Memory: Test history stored via `memory_add()` with type "test_history"**
 - [ ] **Memory: Each test failure stored individually via `memory_bulk_add()`**
@@ -179,7 +182,8 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
   "files_created": [],
   "files_modified": [],
   "decisions": ["Test categorization decisions"],
-  "errors": ["Failed test: test_name - category: code_bug"]
+  "errors": ["Failed test: test_name - category: code_bug"],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -192,6 +196,7 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
 - `files_modified`: Usually empty for test runner
 - `decisions`: Test categorization and triage decisions
 - `errors`: Array of failed test details with categories
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

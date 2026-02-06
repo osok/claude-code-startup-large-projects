@@ -143,6 +143,53 @@
 
 ---
 
+## CRITICAL: Memory MCP Protocol — ALL Agents
+
+**Every agent MUST execute Memory MCP operations on every invocation. This is not optional. Agents that skip memory operations produce orphaned work that other agents cannot find, reuse, or validate.**
+
+### On Start — BEFORE Any Work
+
+**Step 1 of every agent's workflow is reading CLAUDE.md. Step 2 is searching memory.** No agent may begin its primary work without first executing:
+
+```
+memory_search(query: "{task-relevant terms}", memory_types: ["code_pattern", "design", "component"])
+```
+
+Specifically:
+- **Search `code_pattern`** — find registered patterns from similar components. If a similar component exists, follow its patterns exactly.
+- **Search `design`** — find prior decisions that constrain your work. Do not contradict existing ADRs or design decisions.
+- **Search `component`** — find registered components, schemas, and specs. Do not duplicate or conflict with existing components.
+- **Use `code_search()`** — for implementation agents (Developer, Test Coder), find actual code to use as archetypes.
+
+**If you find existing patterns, USE them. Do not reinvent what already exists.**
+
+### On Complete — AFTER All Work
+
+**The last step of every agent's workflow (before returning Task Result) is indexing work in memory.** No agent may return its Task Result without first executing:
+
+1. **Index every file created or modified:**
+   ```
+   index_file(file_path: "{path}", language: "{lang}")
+   ```
+   For directories of documentation:
+   ```
+   index_docs(directory_path: "{dir}", patterns: ["**/*.md"])
+   ```
+
+2. **Store significant results and decisions:**
+   ```
+   memory_add(memory_type: "{appropriate_type}", content: "{summary of work}", metadata: {"work_seq": "{seq}", ...})
+   ```
+
+### Enforcement
+
+- Every agent's `<log-entry>` block MUST include a `"memory_ops"` field confirming what was searched and what was indexed
+- Task Manager validates that `memory_ops` is present in agent results — missing memory operations are flagged as incomplete work
+- All agent success criteria include memory operation checkboxes — **these are mandatory exit criteria, not decorative suggestions**
+- If an agent completes work but did not search memory first or index its output, the work is considered incomplete even if all other criteria pass
+
+---
+
 ## Requirement ID Conventions
 
 Requirements include the sequence number to link them to specific work items.

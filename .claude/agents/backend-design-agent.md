@@ -29,6 +29,8 @@ existing_doc: design-docs/20-{service-name}.md  # if mode=update
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-backend.md`
@@ -140,6 +142,12 @@ Backend Design Agent uses the Memory MCP to maintain API consistency and build o
    memory_search(query: "security policy authentication authorization", memory_types: ["design"])
    ```
 
+5. **Search for registered code patterns** from existing backend implementations:
+   ```
+   memory_search(query: "backend service handler controller pattern implementation", memory_types: ["code_pattern"])
+   ```
+   - Understand how similar services are currently implemented to inform design decisions
+
 ### After Designing
 
 5. **Store service specifications:**
@@ -150,6 +158,11 @@ Backend Design Agent uses the Memory MCP to maintain API consistency and build o
 6. **Store API endpoint inventory:**
    ```
    memory_add(memory_type: "design", content: "API endpoints for {service}: {endpoint list with methods}. Versioning: {strategy}.", metadata: {"category": "backend-design", "work_seq": "{seq}"})
+   ```
+
+7. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -173,6 +186,9 @@ Backend Design Agent uses the Memory MCP to maintain API consistency and build o
 - [ ] Dependencies specified with justification
 - [ ] Dependency licenses verified against policy
 - [ ] No critical/high vulnerabilities in dependencies
+- [ ] **Memory: Searched memory for existing patterns and similar services before designing**
+- [ ] **Memory: Service specs and API endpoint inventory stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -190,7 +206,8 @@ Backend Design Agent uses the Memory MCP to maintain API consistency and build o
   "files_created": ["design-docs/20-user-service.md", "design-docs/20-auth-service.md"],
   "files_modified": [],
   "decisions": ["Key backend design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -202,6 +219,7 @@ Backend Design Agent uses the Memory MCP to maintain API consistency and build o
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of backend design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -17,6 +17,8 @@ Parses requirements documents and produces structured analysis for design orches
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read all documents in `requirement-docs/`
 2. Parse ISO/IEC/IEEE 29148:2018 structure (9 sections)
 3. Extract document metadata (ID, version, status)
@@ -147,6 +149,8 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
 - [ ] Requirements categorized by ID pattern
 - [ ] Traceability matrix built
 - [ ] Cross-cutting concerns extracted
+- [ ] **Memory: Searched memory for prior analyses and existing components before starting**
+- [ ] **Memory: Component identification and cross-cutting concerns stored in memory MCP**
 
 ## Log Entry Output
 
@@ -164,7 +168,8 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
   "files_created": [],
   "files_modified": [],
   "decisions": ["Component identification and categorization decisions"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -176,6 +181,7 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
 - `files_modified`: Usually empty
 - `decisions`: Component identification and categorization decisions
 - `errors`: Array of parsing errors or ambiguities found
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

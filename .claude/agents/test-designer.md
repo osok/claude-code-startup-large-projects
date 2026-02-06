@@ -17,6 +17,8 @@ Plans all tests based on architecture and design documents.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
 3. Load architecture document for current sequence
@@ -123,6 +125,11 @@ Test Designer uses the Memory MCP to create comprehensive test plans informed by
    memory_add(memory_type: "test_history", content: "Test plan for Seq {seq}: Unit tests: {count}. Integration tests: {count}. E2E tests: {count}. Coverage target: {target}%. Requirements covered: {list}.", metadata: {"category": "test-plan", "work_seq": "{seq}"})
    ```
 
+7. **MANDATORY: Index test plan document:**
+   ```
+   index_file(file_path: "project-docs/{seq}-test-plan-{short-name}.md")
+   ```
+
 ## Code Review Finding Assessment
 
 When invoked by Task Manager after a code review phase, Test Designer assesses whether findings require test changes.
@@ -193,6 +200,9 @@ notes: {summary of test impact assessment}
 - [ ] Test data requirements documented
 - [ ] Requirements traceability matrix complete
 - [ ] Tests cover: happy path, bounds, errors, edge cases, security
+- [ ] **Memory: Searched memory for existing test patterns, failure history, and code patterns before planning**
+- [ ] **Memory: Test plan stored in memory MCP**
+- [ ] **Memory: Test plan document indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -210,7 +220,8 @@ notes: {summary of test impact assessment}
   "files_created": ["project-docs/test-plan.md"],
   "files_modified": [],
   "decisions": ["Key test planning decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -222,6 +233,7 @@ notes: {summary of test impact assessment}
 - `files_modified`: Updated test plans (full paths)
 - `decisions`: Array of test planning decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -17,10 +17,13 @@ Writes test code based on test plan.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load test plan for current sequence
 3. Load testing convention file: `conventions/testing/{language}.md`
 4. Review source code to understand implementation
+4a. Search Memory MCP for registered code patterns from similar components (`code_pattern` type)
 5. Write tests according to test plan (**IMPORTANT**)
 6. Target 70% coverage (functions and lines)
 7. Fix test code issues when reported by Test Runner
@@ -220,7 +223,8 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
   "files_created": ["tests/unit/test_auth.py"],
   "files_modified": ["tests/conftest.py"],
   "decisions": ["Key testing decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -232,6 +236,7 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
 - `files_modified`: Updated test files and fixtures (full paths)
 - `decisions`: Array of testing decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -64,7 +64,7 @@ Update the task list **immediately** when:
 9. Execute implementation phase (see workflow order below) — continue logging all agents
 10. Update Claude.md when work complete
 
-**CRITICAL: Every agent invocation from step 5 onward MUST have a START log entry written BEFORE the agent runs and a COMPLETE/ERROR entry written IMMEDIATELY after.** This includes architecture and design agents, not just implementation agents.
+**CRITICAL: Every agent invocation from step 5 onward MUST have a START log entry written BEFORE the agent runs and a COMPLETE/ERROR entry written IMMEDIATELY after.** This applies to ALL agents without exception — architecture, design, planning, implementation, review, testing, documentation, and deployment agents. No agent invocation may occur without both a START and COMPLETE/ERROR log entry. If an agent is invoked and its log entries are missing, this is a workflow violation.
 
 ### Session Resume ("continue")
 1. Read task list for current sequence
@@ -73,7 +73,8 @@ Update the task list **immediately** when:
 4. Find next actionable task:
    - First `pending` task with all dependencies `complete`
    - Or first `blocked` task whose blocker is now `complete`
-5. Resume workflow from that point
+5. **Mark the task as `in-progress`** in the task list BEFORE invoking its agent
+6. Resume workflow from that point
 
 ## Task List Format
 
@@ -120,6 +121,16 @@ Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 9. Test Runner Agent
 10. Documentation Agent(s)
 
+### Task Status Protocol
+
+For EVERY task in the workflow:
+1. **Before invoking agent**: Set task status to `in-progress` in task list, save file
+2. **Invoke agent**: Pass task details and context
+3. **After agent returns**: Set task status to `complete`/`blocked`/`failed` in task list, save file
+4. **Log**: Write START entry before step 2, write COMPLETE/ERROR entry after step 3
+
+Never batch status updates. Each task transitions through `pending` → `in-progress` → `complete` individually.
+
 ## Structured Output Parsing
 
 When an agent completes, parse its Task Result block:
@@ -136,10 +147,13 @@ notes: {context for next steps}
 
 **IMPORTANT: Update the task list file IMMEDIATELY after processing each result. Do not proceed to the next action until the task list is written.**
 
+**CRITICAL: Before invoking ANY agent for a task, ALWAYS mark that task as `in-progress` in the task list file and save immediately. The status cycle MUST be: `pending` → `in-progress` → `complete`/`blocked`/`failed`. Never skip the `in-progress` state.**
+
 **status: complete**
-1. **IMMEDIATELY** mark task as `complete` in task list file
-2. Save the task list file
-3. Proceed to next task in workflow
+1. **Validate memory operations**: Check that the agent's `<log-entry>` includes `"memory_ops"` with `"searched": true` and at least one entry in `"indexed"`. If missing, log a warning and note the gap — the agent did not follow the Memory Protocol.
+2. **IMMEDIATELY** mark task as `complete` in task list file
+3. Save the task list file
+4. Proceed to next task in workflow
 
 **status: blocked**
 1. **IMMEDIATELY** mark task as `blocked` in task list file
@@ -783,6 +797,7 @@ Task Manager constructs the final log entry:
   "files_modified": {from agent log-entry},
   "decisions": {from agent log-entry},
   "errors": {from agent log-entry},
+  "memory_ops": {from agent log-entry — MANDATORY},
   "duration_ms": {calculated or null}
 }
 ```

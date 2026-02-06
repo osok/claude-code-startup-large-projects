@@ -29,6 +29,8 @@ existing_doc: design-docs/01-style-guide.md or design-docs/90-{name}.md  # if mo
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load templates from `design-templates/`
@@ -133,6 +135,12 @@ UI/UX Design Agent uses the Memory MCP to maintain design consistency across wor
    memory_search(query: "accessibility WCAG requirements", memory_types: ["requirements"])
    ```
 
+4. **Search for registered code patterns** from similar UI components:
+   ```
+   memory_search(query: "UI component code pattern implementation frontend", memory_types: ["code_pattern"])
+   ```
+   - Understand how similar components are currently implemented to inform design decisions
+
 ### After Designing
 
 4. **Store key UI/UX decisions:**
@@ -143,6 +151,11 @@ UI/UX Design Agent uses the Memory MCP to maintain design consistency across wor
 5. **Store component specifications** for developer reference:
    ```
    memory_add(memory_type: "component", content: "UI Component: {name}. Variants: {list}. States: {states}. Accessibility: {ARIA}. Design doc: {path}.", metadata: {"component_name": "{name}", "type": "ui-component"})
+   ```
+
+6. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -165,6 +178,9 @@ UI/UX Design Agent uses the Memory MCP to maintain design consistency across wor
 - [ ] Accessibility compliant
 - [ ] Responsive behavior defined
 - [ ] Design tokens defined
+- [ ] **Memory: Searched memory for existing patterns and similar components before designing**
+- [ ] **Memory: Design decisions and component specs stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -182,7 +198,8 @@ UI/UX Design Agent uses the Memory MCP to maintain design consistency across wor
   "files_created": ["design-docs/01-style-guide.md", "design-docs/90-login-screen.md"],
   "files_modified": [],
   "decisions": ["Key UI/UX design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -194,6 +211,7 @@ UI/UX Design Agent uses the Memory MCP to maintain design consistency across wor
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of UI/UX design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -28,6 +28,8 @@ existing_doc: design-docs/60-infrastructure.md  # if mode=update
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-infrastructure.md`
@@ -247,6 +249,12 @@ Infrastructure Design Agent uses the Memory MCP to maintain infrastructure consi
    memory_search(query: "security infrastructure IAM network encryption", memory_types: ["design"])
    ```
 
+5. **Search for registered code patterns** from existing infrastructure implementations:
+   ```
+   memory_search(query: "infrastructure Docker ECS deployment configuration pattern implementation", memory_types: ["code_pattern"])
+   ```
+   - Understand how similar infrastructure is currently configured to inform design decisions
+
 ### After Designing
 
 5. **Store infrastructure specifications:**
@@ -257,6 +265,11 @@ Infrastructure Design Agent uses the Memory MCP to maintain infrastructure consi
 6. **Store CI/CD and observability decisions:**
    ```
    memory_add(memory_type: "design", content: "CI/CD for {service}: Pipeline: {stages}. Observability: {stack}. Alerting: {rules}.", metadata: {"category": "infrastructure-design", "work_seq": "{seq}"})
+   ```
+
+7. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -283,6 +296,9 @@ Infrastructure Design Agent uses the Memory MCP to maintain infrastructure consi
 - [ ] Logging, metrics, tracing configured
 - [ ] Alerting rules and escalation defined
 - [ ] Dashboards specified
+- [ ] **Memory: Searched memory for existing patterns and similar infrastructure before designing**
+- [ ] **Memory: Infrastructure specs and CI/CD decisions stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -300,7 +316,8 @@ Infrastructure Design Agent uses the Memory MCP to maintain infrastructure consi
   "files_created": ["design-docs/60-infrastructure.md"],
   "files_modified": [],
   "decisions": ["Key infrastructure design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -312,6 +329,7 @@ Infrastructure Design Agent uses the Memory MCP to maintain infrastructure consi
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of infrastructure design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -17,6 +17,8 @@ Triggered when user says `new work` or needs requirements gathered for new work.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Initial Setup
 
 1. **Read Claude.md** to get Document Sequence Tracker
@@ -219,6 +221,11 @@ Requirements Agent uses the Memory MCP to learn from prior requirements and avoi
    memory_bulk_add(memories: [{memory_type: "requirements", content: "REQ-{SEQ}-FN-001: ...", metadata: {...}}, ...])
    ```
 
+7. **MANDATORY: Index requirements document:**
+   ```
+   index_file(file_path: "requirement-docs/{seq}-requirements-{short_name}.md")
+   ```
+
 ## Constraints
 
 - NO dates in documents (no creation date, revision date, etc.)
@@ -261,6 +268,9 @@ When user asks for suggestions:
 - [ ] User confirms requirements are complete
 - [ ] CLAUDE.md updated (Current Work, Document Sequence Tracker)
 - [ ] No traceability matrix included (separate concern)
+- [ ] **Memory: Searched memory for existing requirements and design decisions before gathering**
+- [ ] **Memory: All requirements stored in memory MCP via `memory_bulk_add()`**
+- [ ] **Memory: Requirements document indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -278,7 +288,8 @@ When user asks for suggestions:
   "files_created": ["requirement-docs/requirements.md"],
   "files_modified": [],
   "decisions": ["Key requirements decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -290,6 +301,7 @@ When user asks for suggestions:
 - `files_modified`: Updated requirement documents (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

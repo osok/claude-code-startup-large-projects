@@ -29,6 +29,8 @@ existing_doc: design-docs/50-api-contracts.md  # if mode=update
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-integration.md`
@@ -123,6 +125,12 @@ Integration Design Agent uses the Memory MCP to ensure API contracts are consist
    memory_search(query: "backend service frontend app endpoints consumed", memory_types: ["component"])
    ```
 
+4. **Search for registered code patterns** from existing integration implementations:
+   ```
+   memory_search(query: "API client integration endpoint handler middleware pattern implementation", memory_types: ["code_pattern"])
+   ```
+   - Understand how similar integrations are currently implemented to inform design decisions
+
 ### After Designing
 
 4. **Store API contract specifications:**
@@ -136,6 +144,11 @@ Integration Design Agent uses the Memory MCP to ensure API contracts are consist
 5. **Store event contracts:**
    ```
    memory_add(memory_type: "component", content: "Event: {event_name}. Producer: {service}. Consumers: {list}. Schema: {schema}. Delivery: {guarantee}.", metadata: {"component_name": "{event_name}", "type": "event-contract", "work_seq": "{seq}"})
+   ```
+
+6. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -156,6 +169,9 @@ Integration Design Agent uses the Memory MCP to ensure API contracts are consist
 - [ ] Events documented
 - [ ] Auth defined
 - [ ] SLA targets defined
+- [ ] **Memory: Searched memory for existing patterns and similar integrations before designing**
+- [ ] **Memory: API contract and event specs stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -173,7 +189,8 @@ Integration Design Agent uses the Memory MCP to ensure API contracts are consist
   "files_created": ["design-docs/50-api-contracts.md"],
   "files_modified": [],
   "decisions": ["Key integration design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -185,6 +202,7 @@ Integration Design Agent uses the Memory MCP to ensure API contracts are consist
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of integration design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

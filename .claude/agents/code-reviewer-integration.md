@@ -17,6 +17,8 @@ Reviews all implemented code to ensure there are no stubs, TODO placeholders, or
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Scan entire codebase for stub patterns and placeholders
 3. Trace data flow from UI to API to database
@@ -264,6 +266,11 @@ Add to the integration review report:
    memory_add(memory_type: "test_history", content: "Integration review for Seq {seq}: Stubs: {count}. Wiring gaps: {count}. Consistency violations: {count}. Base class reimplementations: {count}. Duplicated utilities: {count}.", metadata: {"category": "integration-review", "work_seq": "{seq}"})
    ```
 
+10. **MANDATORY: Index integration review report:**
+    ```
+    index_file(file_path: "project-docs/{seq}-integration-review-{short-name}.md")
+    ```
+
 ## Outputs
 
 - `project-docs/{seq}-integration-review-{short-name}.md`
@@ -277,6 +284,9 @@ Add to the integration review report:
 - [ ] All wiring gaps identified
 - [ ] Specific file/line references provided
 - [ ] Report follows standard format
+- [ ] **Memory: Searched memory for integration contracts, code patterns, and prior findings during review**
+- [ ] **Memory: Integration and consistency findings stored in memory MCP**
+- [ ] **Memory: Review report indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -294,7 +304,8 @@ Add to the integration review report:
   "files_created": ["project-docs/001-integration-review-feature.md"],
   "files_modified": [],
   "decisions": ["Stub and wiring gap identifications"],
-  "errors": ["STUB: src/api/handler.go:55 - NotImplemented", "WIRING: src/routes.go missing /api/users endpoint"]
+  "errors": ["STUB: src/api/handler.go:55 - NotImplemented", "WIRING: src/routes.go missing /api/users endpoint"],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -307,6 +318,7 @@ Add to the integration review report:
 - `files_modified`: Usually empty for reviewers
 - `decisions`: Stub and wiring gap identifications
 - `errors`: Array of stubs and wiring gaps with file:line references
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

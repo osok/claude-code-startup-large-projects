@@ -28,6 +28,8 @@ existing_doc: design-docs/03-security-architecture.md  # if mode=update
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-security.md`
@@ -227,6 +229,12 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
    ```
    - Address patterns of vulnerabilities found in prior reviews
 
+5. **Search for registered code patterns** from security implementations:
+   ```
+   memory_search(query: "security authentication authorization middleware pattern implementation", memory_types: ["code_pattern"])
+   ```
+   - Understand how security is currently implemented to inform design decisions
+
 ### After Designing
 
 5. **Store threat model entries** for security reviewers:
@@ -240,6 +248,11 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
 6. **Store security policies** for developer and reviewer reference:
    ```
    memory_add(memory_type: "design", content: "Security policy: {policy area}. Rules: {rules}. Approved libraries: {list}. License policy: {policy}.", metadata: {"category": "security-policy", "work_seq": "{seq}"})
+   ```
+
+7. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -266,6 +279,9 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
 - [ ] Dependency security policies defined
 - [ ] License allowlist/blocklist documented
 - [ ] Vulnerability thresholds set
+- [ ] **Memory: Searched memory for existing security patterns and code implementations before designing**
+- [ ] **Memory: Threat models and security policies stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -283,7 +299,8 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
   "files_created": ["design-docs/03-security-architecture.md"],
   "files_modified": [],
   "decisions": ["Key security design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -295,6 +312,7 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of security design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

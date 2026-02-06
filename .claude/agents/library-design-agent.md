@@ -29,6 +29,8 @@ existing_doc: design-docs/10-{library-name}.md  # if mode=update
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-library.md`
@@ -162,6 +164,12 @@ Library Design Agent uses the Memory MCP to ensure library designs are consisten
    memory_search(query: "frontend backend dependencies {library area}", memory_types: ["design"])
    ```
 
+4. **Search for registered code patterns** from existing library implementations:
+   ```
+   memory_search(query: "library component shared utility pattern implementation", memory_types: ["code_pattern"])
+   ```
+   - Understand how similar libraries are currently implemented to inform design decisions
+
 ### After Designing
 
 4. **Store library API specifications:**
@@ -172,6 +180,11 @@ Library Design Agent uses the Memory MCP to ensure library designs are consisten
 5. **Store dependency decisions:**
    ```
    memory_add(memory_type: "design", content: "Library {name} dependency decisions: {dependencies with justifications}.", metadata: {"category": "library-design", "work_seq": "{seq}"})
+   ```
+
+6. **MANDATORY: Index design documents created/modified:**
+   ```
+   index_file(file_path: "{design_doc_path}")
    ```
 
 ## Constraints
@@ -196,6 +209,9 @@ Library Design Agent uses the Memory MCP to ensure library designs are consisten
 - [ ] Peer dependency compatibility documented
 - [ ] Bundle size targets defined
 - [ ] Dependency licenses verified against policy
+- [ ] **Memory: Searched memory for existing patterns and similar libraries before designing**
+- [ ] **Memory: Library API specs and dependency decisions stored in memory MCP**
+- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -213,7 +229,8 @@ Library Design Agent uses the Memory MCP to ensure library designs are consisten
   "files_created": ["design-docs/10-shared-components.md"],
   "files_modified": [],
   "decisions": ["Key library design decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -225,6 +242,7 @@ Library Design Agent uses the Memory MCP to ensure library designs are consisten
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of library design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

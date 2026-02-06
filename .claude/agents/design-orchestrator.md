@@ -26,6 +26,8 @@ Master coordinator for transforming requirements into design documents.
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. **Read CLAUDE.md** to get current sequence and short name
 2. **Invoke requirements-analyzer** to parse `requirement-docs/{seq}-requirements-{short_name}.md`
 3. **Create work-specific design overview:** `design-docs/{seq}-design-{short_name}.md`
@@ -145,6 +147,12 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
    ```
    - Check that parallel design agents didn't create conflicting decisions
 
+7. **MANDATORY: Index all design documents created/modified:**
+   ```
+   index_docs(directory_path: "design-docs/", patterns: ["**/*.md"])
+   ```
+   - This ensures all design work is searchable in memory for downstream agents
+
 ## Constraints
 
 - **NEVER duplicate** foundational documents
@@ -160,6 +168,9 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - [ ] 100% requirements coverage for current work
 - [ ] Cross-references consistent
 - [ ] 00-design-overview.md updated with new work reference
+- [ ] **Memory: Searched memory for existing designs and decisions before orchestration**
+- [ ] **Memory: Orchestration summary stored in memory MCP**
+- [ ] **Memory: All design documents indexed via `index_docs()`**
 
 ## Log Entry Output
 
@@ -177,7 +188,8 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
   "files_created": ["design-docs/00-design-overview.md"],
   "files_modified": [],
   "decisions": ["Orchestration decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -189,6 +201,7 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of orchestration decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

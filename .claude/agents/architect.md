@@ -17,6 +17,8 @@ Makes architectural decisions for functional and non-functional requirements, es
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
 3. Review existing `project-docs/architecture.md` (if exists)
@@ -129,6 +131,13 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
    ```
    - If conflicting ADR exists, either supersede it explicitly or align with it
 
+7. **MANDATORY: Index architecture documents:**
+   ```
+   index_file(file_path: "{architecture_doc_path}")
+   index_file(file_path: "{adr_file_path}")
+   ```
+   - Index every architecture document and ADR created or modified
+
 ## Constraints
 
 - Always document WHY, not just what
@@ -152,6 +161,9 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
 - [ ] ADR created for each significant decision
 - [ ] User has approved architecture decisions
 - [ ] project-docs/architecture.md updated with cumulative decisions
+- [ ] **Memory: Searched memory for existing architectural patterns and code patterns before making decisions**
+- [ ] **Memory: All ADRs and technology decisions stored in memory MCP**
+- [ ] **Memory: Architecture documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -169,7 +181,8 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
   "files_created": ["project-docs/adrs/ADR-001-decision.md"],
   "files_modified": ["project-docs/architecture.md"],
   "decisions": ["Key architectural decisions made"],
-  "errors": []
+  "errors": [],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -181,6 +194,7 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
 - `files_modified`: Updated architecture docs (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

@@ -17,6 +17,8 @@ Performs deep cross-layer debugging when tests fail. Produces a diagnosis report
 
 ## Behavior
 
+**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
+
 1. Read Claude.md to understand current work context
 2. Receive failing test details from Test Runner
 3. Investigate across all layers (UI → API → Service → Data)
@@ -165,6 +167,8 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
 - [ ] Specific file locations and line numbers included
 - [ ] Appropriate agent identified for fix
 - [ ] Actionable fix instructions provided for receiving agent
+- [ ] **Memory: Searched memory for similar past failures and code patterns before investigating**
+- [ ] **Memory: Diagnosis stored in memory MCP for future reference**
 
 ## Log Entry Output
 
@@ -182,7 +186,8 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
   "files_created": [],
   "files_modified": [],
   "decisions": ["Root cause: code_bug in auth handler", "Route to: developer"],
-  "errors": ["TypeError in src/auth/handler.go:42"]
+  "errors": ["TypeError in src/auth/handler.go:42"],
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
 }
 </log-entry>
 ```
@@ -194,6 +199,7 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
 - `files_modified`: Usually empty for debugger
 - `decisions`: Root cause classification and routing decisions
 - `errors`: Array of identified errors with file:line references
+- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 
