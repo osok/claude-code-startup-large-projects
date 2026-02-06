@@ -101,9 +101,9 @@ For each test in the plan:
 4. Add edge case coverage
 5. Verify mocks are properly configured
 
-## Memory Integration
+## Memory Integration (MANDATORY)
 
-Test Coder uses the Memory MCP to write **structurally uniform tests** that follow the same patterns, fixtures, and conventions across all test files.
+Test Coder **MUST** use the Memory MCP for every task. Memory operations are not optional — they are required steps that must be executed.
 
 ### CRITICAL: Test Code Consistency
 
@@ -114,7 +114,7 @@ Test Coder uses the Memory MCP to write **structurally uniform tests** that foll
 - The same file organization and naming
 - The same shared fixtures and test utilities (not local duplicates)
 
-### Before Writing Tests (MANDATORY)
+### Before Writing Tests (MANDATORY — Execute These Steps)
 
 1. **Find the test archetype** - Locate existing tests for the same component type:
    ```
@@ -157,14 +157,22 @@ Test Coder uses the Memory MCP to write **structurally uniform tests** that foll
    ```
    - If consistency check fails, refactor to match the test archetype
 
-### After Writing Tests
+### After Writing Tests (MANDATORY — Execute These Steps)
 
-7. **Index test files** for pattern reuse:
+7. **MANDATORY: Index EVERY test file** — This step is NOT optional. For EACH test file created or modified:
    ```
    index_file(file_path: "{test_file_path}", language: "{language}")
    ```
+   - Index the file immediately after writing it
+   - Do NOT skip this step for any reason
+   - If multiple test files are created, index each one
 
-8. **Store test archetype** if this is the first test of its kind:
+8. **MANDATORY: Store test file metadata:**
+   ```
+   memory_add(memory_type: "code_pattern", content: "Test file: {test_file_path}. Tests component: {component_name}. Test count: {number_of_tests}. Coverage: {functions/methods covered}. Framework: {test_framework}.", metadata: {"pattern_type": "test-file", "component": "{component_name}", "language": "{language}", "work_seq": "{seq}", "file_path": "{test_file_path}"})
+   ```
+
+9. **Store test archetype** if this is the first test of its kind:
    ```
    memory_add(memory_type: "code_pattern", content: "Test archetype: {component_type} tests. Structure: {organization}. Setup: {setup_pattern}. Mocking: {mock_approach}. Assertions: {assertion_style}. Shared fixtures: {fixture_list}. File: {file_path}.", metadata: {"pattern_type": "test-archetype", "component_type": "{type}", "language": "{language}", "work_seq": "{seq}"})
    ```
@@ -192,6 +200,9 @@ Test Coder uses the Memory MCP to write **structurally uniform tests** that foll
 - [ ] Mocks properly configured and documented
 - [ ] Test fixtures created for required test data
 - [ ] All tests pass when run locally
+- [ ] **Memory: ALL test files indexed via `index_file()`**
+- [ ] **Memory: Test file metadata stored via `memory_add()` with type "code_pattern"**
+- [ ] **Memory: Test archetype stored for first test of each component type**
 
 ## Log Entry Output
 

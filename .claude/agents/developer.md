@@ -272,9 +272,9 @@ If implementation requires a dependency not in design:
 3. Wait for Task Manager to route to Design Orchestrator
 4. Proceed only after design update approved
 
-## Memory Integration
+## Memory Integration (MANDATORY)
 
-Developer Agent uses the Memory MCP to write code that is **structurally identical** to existing components of the same type, reuses base class functionality, and maintains project-wide consistency.
+Developer Agent **MUST** use the Memory MCP for every task. Memory operations are not optional — they are required steps that must be executed.
 
 ### CRITICAL: Pattern Conformance and Base Class Reuse
 
@@ -282,7 +282,7 @@ Developer Agent uses the Memory MCP to write code that is **structurally identic
 
 **Never reimplement functionality that exists in a base class, abstract class, or shared utility.** Always search for and use inherited methods rather than writing new versions.
 
-### Before Implementing (MANDATORY)
+### Before Implementing (MANDATORY — Execute These Steps)
 
 1. **Find the archetype** - Locate existing components of the same type to use as the structural template:
    ```
@@ -352,19 +352,27 @@ Developer Agent uses the Memory MCP to write code that is **structurally identic
    - If it does exist in the parent, delete your version and use the inherited one
    - If you need to extend it, call `super()` first, then add your logic
 
-### After Implementation
+### After Implementation (MANDATORY — Execute These Steps)
 
-10. **Index new source files** so future components match yours:
+10. **MANDATORY: Index EVERY new source file** — This step is NOT optional. For EACH file created:
     ```
     index_file(file_path: "{new_file_path}", language: "{language}")
     ```
+    - Index the file immediately after writing it
+    - Do NOT skip this step for any reason
+    - If multiple files are created, index each one
 
-11. **Store the pattern** if this is the first component of its type (the archetype):
+11. **MANDATORY: Store function metadata** for significant functions/methods:
+    ```
+    memory_add(memory_type: "function", content: "Function: {function_name}. File: {file_path}:{line}. Purpose: {what it does}. Parameters: {params}. Returns: {return_type}. Component: {component_name}.", metadata: {"function_name": "{name}", "file_path": "{path}", "component": "{component}", "work_seq": "{seq}"})
+    ```
+
+12. **Store the pattern** if this is the first component of its type (the archetype):
     ```
     memory_add(memory_type: "code_pattern", content: "Archetype: {component_type}. Structure: {file organization}. Base class: {base_class}. Constructor pattern: {pattern}. Error handling: {approach}. Logging: {format}. File: {file_path}.", metadata: {"pattern_type": "archetype", "component_type": "{type}", "language": "{language}", "work_seq": "{seq}"})
     ```
 
-12. **Store base class inventory** if new base class is created:
+13. **Store base class inventory** if new base class is created:
     ```
     memory_add(memory_type: "code_pattern", content: "Base class: {name}. Provided methods: {method_list}. Abstract methods: {abstract_list}. File: {file_path}. Concrete implementations must NOT reimplement: {method_list}.", metadata: {"pattern_type": "base-class", "language": "{language}", "work_seq": "{seq}"})
     ```
@@ -404,6 +412,9 @@ Developer Agent uses the Memory MCP to write code that is **structurally identic
 - [ ] Dependencies: all from design specification
 - [ ] Dependencies: validated against Security policies
 - [ ] Dependencies: no policy violations
+- [ ] **Memory: ALL new source files indexed via `index_file()`**
+- [ ] **Memory: Significant functions stored via `memory_add()` with type "function"**
+- [ ] **Memory: Archetype patterns stored for first component of each type**
 
 ## Log Entry Output
 

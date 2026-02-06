@@ -89,45 +89,50 @@ Test Runner MUST report to Task Manager:
 - Complex test refactoring
 - Environment configuration
 
-## Memory Integration
+## Memory Integration (MANDATORY)
 
-Test Runner uses the Memory MCP to track test history, detect flaky tests, and improve failure categorization over time.
+Test Runner **MUST** use the Memory MCP for every test run. Memory operations are not optional — they are required steps that must be executed.
 
-### Before Running Tests
+### Before Running Tests (MANDATORY — Execute These Steps)
 
-1. **Search for previous test runs:**
+1. **MANDATORY: Search for previous test runs:**
    ```
    memory_search(query: "test results {component} pass fail", memory_types: ["test_history"])
    ```
    - Establish baseline for comparison
    - Identify historically flaky tests to flag early
 
-### After Running Tests
+### After Running Tests (MANDATORY — Execute These Steps)
 
-2. **Store test results** for trend tracking:
+2. **MANDATORY: Store test results** — This step is NOT optional. Execute after EVERY test run:
    ```
-   memory_add(memory_type: "test_history", content: "Test run for Seq {seq}: Total: {count}. Passed: {pass}. Failed: {fail}. Coverage: {coverage}%. Duration: {duration}s. Flaky: {flaky_tests}.", metadata: {"category": "test-run", "work_seq": "{seq}", "pass_rate": "{percentage}"})
+   memory_add(memory_type: "test_result", content: "Test run for Seq {seq}: Total: {count}. Passed: {pass}. Failed: {fail}. Coverage: {coverage}%. Duration: {duration}s. Flaky: {flaky_tests}.", metadata: {"category": "test-run", "work_seq": "{seq}", "pass_rate": "{percentage}", "total": {count}, "passed": {pass}, "failed": {fail}})
    ```
 
-3. **Store failure details** for each failed test:
+3. **MANDATORY: Store test history summary:**
+   ```
+   memory_add(memory_type: "test_history", content: "Test history for Seq {seq}: Total: {count}. Passed: {pass}. Failed: {fail}. Coverage: {coverage}%. Duration: {duration}s.", metadata: {"category": "test-run", "work_seq": "{seq}", "pass_rate": "{percentage}"})
+   ```
+
+4. **MANDATORY: Store failure details** for EACH failed test (do NOT skip any):
    ```
    memory_bulk_add(memories: [
-     {memory_type: "test_history", content: "Test failure: {test_name}. Category: {code_bug|test_bug|environment|etc}. Error: {message}. File: {file:line}. Component: {component}.", metadata: {"category": "test-failure", "work_seq": "{seq}", "failure_category": "{category}"}},
+     {memory_type: "test_history", content: "Test failure: {test_name}. Category: {code_bug|test_bug|environment|etc}. Error: {message}. File: {file:line}. Component: {component}.", metadata: {"category": "test-failure", "work_seq": "{seq}", "failure_category": "{category}", "test_name": "{test_name}"}},
      ...
    ])
    ```
 
-4. **Detect flaky tests** by comparing with history:
+5. **Detect flaky tests** by comparing with history:
    ```
    memory_search(query: "test failure {test_name}", memory_types: ["test_history"])
    ```
    - If test has intermittent pass/fail history, flag as flaky
 
-### Performance Tracking
+### Performance Tracking (MANDATORY)
 
-5. **Store performance baselines:**
+6. **MANDATORY: Store performance baselines:**
    ```
-   memory_add(memory_type: "test_history", content: "Test performance baseline: Suite: {suite}. Duration: {duration}s. Slow tests: {list}.", metadata: {"category": "test-performance", "work_seq": "{seq}"})
+   memory_add(memory_type: "test_history", content: "Test performance baseline: Suite: {suite}. Duration: {duration}s. Slow tests: {list}.", metadata: {"category": "test-performance", "work_seq": "{seq}", "suite": "{suite}", "duration_s": {duration}})
    ```
 
 ## Constraints
@@ -153,6 +158,10 @@ Test Runner uses the Memory MCP to track test history, detect flaky tests, and i
 - [ ] Flaky tests identified and flagged
 - [ ] Performance baseline tracked
 - [ ] All failures reported to Task Manager with category
+- [ ] **Memory: Test results stored via `memory_add()` with type "test_result"**
+- [ ] **Memory: Test history stored via `memory_add()` with type "test_history"**
+- [ ] **Memory: Each test failure stored individually via `memory_bulk_add()`**
+- [ ] **Memory: Performance baseline stored**
 
 ## Log Entry Output
 

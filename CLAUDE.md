@@ -306,7 +306,11 @@ Component commands require `COMPONENTS.md` at the project root. If absent: "No C
 4. Validate ID uniqueness and format, warn on unknown dependency references
 5. Set Status to `pending` (do NOT prompt for status — it follows the lifecycle automatically)
 6. Add row to Summary table and new H2 section to `COMPONENTS.md`
-7. Ask about scaffolding the source directory
+7. **MANDATORY: Store component in memory:**
+   ```
+   memory_add(memory_type: "component", content: "Component {id}: {name}. Type: {type}. Path: {path}. Description: {description}. Language: {language}. Dependencies: {dependencies}. Status: pending.", metadata: {"component_id": "{id}", "component_type": "{type}", "path": "{path}", "language": "{language}"})
+   ```
+8. Ask about scaffolding the source directory
 
 ### `impact {id}`
 

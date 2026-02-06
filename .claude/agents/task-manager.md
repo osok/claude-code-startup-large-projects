@@ -389,32 +389,33 @@ When Test Runner reports categorized failures:
 
 Routing chain: try first agent, if issue persists, escalate to next.
 
-## Memory Integration
+## Memory Integration (MANDATORY)
 
-Task Manager uses the Memory MCP to maintain long-term project knowledge across sessions and improve orchestration decisions.
+Task Manager **MUST** use the Memory MCP at every workflow milestone. Memory operations are not optional — they are required steps that must be executed.
 
-### On Workflow Start (begin/continue)
+### On Workflow Start (MANDATORY — Execute These Steps)
 
-1. **Search for session context:**
+1. **MANDATORY: Check system health FIRST:**
+   ```
+   memory_statistics()
+   ```
+   - Verify memory system is operational before proceeding
+   - If unhealthy, warn user and continue with degraded functionality
+
+2. **MANDATORY: Search for session context:**
    ```
    memory_search(query: "session state work sequence {seq} {short_name}", memory_types: ["session"])
    ```
    - Retrieve last session state to detect where work left off
    - Check for stale in-progress tasks from interrupted sessions
 
-2. **Search for prior decisions:**
+3. **Search for prior decisions:**
    ```
    memory_search(query: "architectural decisions {short_name}", memory_types: ["design"])
    ```
    - Load context from prior phases to inform current routing
 
-3. **Check system health:**
-   ```
-   memory_statistics()
-   ```
-   - Verify memory system is operational before relying on it
-
-### During Workflow Execution
+### During Workflow Execution (MANDATORY)
 
 4. **Before invoking each agent**, search for relevant context:
    ```
@@ -422,9 +423,9 @@ Task Manager uses the Memory MCP to maintain long-term project knowledge across 
    ```
    - Provide retrieved context to the invoked agent
 
-5. **After each phase transition**, store session state:
+5. **MANDATORY: After each phase transition**, store session state:
    ```
-   memory_add(memory_type: "session", content: "Phase {phase} completed for Seq {seq} {short_name}. Tasks completed: {list}. Next phase: {next}.")
+   memory_add(memory_type: "session", content: "Phase {phase} completed for Seq {seq} {short_name}. Tasks completed: {list}. Next phase: {next}.", metadata: {"work_seq": "{seq}", "phase": "{phase}", "category": "phase-transition"})
    ```
 
 6. **Track requirement coverage** periodically:
@@ -433,17 +434,33 @@ Task Manager uses the Memory MCP to maintain long-term project knowledge across 
    ```
    - Verify requirements are being addressed by implementation
 
-### On Workflow Completion
+### After Implementation Phase (MANDATORY)
 
-7. **Store completion summary:**
-   ```
-   memory_add(memory_type: "session", content: "Work Seq {seq} {short_name} completed. All tasks done. Phases completed: {list}. Key decisions: {decisions}.")
-   ```
-
-8. **Index new source files** created during implementation:
+7. **MANDATORY: Index ALL source files** — Execute after Developer agents complete:
    ```
    index_directory(directory_path: "{src_directory}", patterns: ["**/*.{lang}"])
    ```
+   - This ensures all new code is searchable in memory
+   - Do NOT skip this step
+
+### After Testing Phase (MANDATORY)
+
+8. **MANDATORY: Index ALL test files** — Execute after Test Coder agents complete:
+   ```
+   index_directory(directory_path: "{test_directory}", patterns: ["**/*test*.{lang}", "**/*spec*.{lang}"])
+   ```
+
+### On Workflow Completion (MANDATORY)
+
+9. **MANDATORY: Store completion summary:**
+   ```
+   memory_add(memory_type: "session", content: "Work Seq {seq} {short_name} completed. All tasks done. Phases completed: {list}. Key decisions: {decisions}.", metadata: {"work_seq": "{seq}", "category": "work-complete"})
+   ```
+
+10. **MANDATORY: Index documentation:**
+    ```
+    index_docs(directory_path: "project-docs/", patterns: ["**/*.md"])
+    ```
 
 ### Code Consistency Gate
 
@@ -489,6 +506,9 @@ Task Manager enforces code consistency as a **mandatory quality gate** during th
 - Preserve context when suspending/resuming tasks
 - Enforce 3-level chain depth limit
 - Detect and resolve circular dependencies before creating them
+- **CRITICAL: Execute ALL mandatory memory operations** - index_directory after implementation and testing phases
+- **CRITICAL: Store session state after EVERY phase transition**
+- **CRITICAL: Check memory_statistics() at workflow start**
 
 ## Git Orchestration
 
@@ -832,3 +852,9 @@ When all tasks in the task list reach `complete` status and all exit criteria pa
 - [ ] Claude.md Current Work updated to reflect completion
 - [ ] Component status updated to `complete` in COMPONENTS.md (if component-scoped)
 - [ ] User informed of any blocked tasks requiring intervention
+- [ ] **Memory: `memory_statistics()` called at workflow start**
+- [ ] **Memory: Session state stored after EVERY phase transition**
+- [ ] **Memory: `index_directory()` called after implementation phase**
+- [ ] **Memory: `index_directory()` called after testing phase**
+- [ ] **Memory: `index_docs()` called on workflow completion**
+- [ ] **Memory: Completion summary stored on workflow completion**
