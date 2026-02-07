@@ -32,11 +32,24 @@ Master coordinator for transforming requirements into design documents.
 2. **Invoke requirements-analyzer** to parse `requirement-docs/{seq}-requirements-{short_name}.md`
 3. **Create work-specific design overview:** `design-docs/{seq}-design-{short_name}.md`
 4. **Check existing foundational docs** in `design-docs/`
-5. **For each required design area:**
-   - If foundational doc exists → Invoke agent with `mode: update`
-   - If foundational doc missing → Invoke agent with `mode: create`
+5. **Build agent invocation list** from requirements-analyzer output (see Mandatory Component Design Rules above):
+   a. **Mandatory agents** — iterate the analyzer's `components` section. For each identified component, add the required agent(s) per the Mandatory Per-Component Agents table. This is not discretionary.
+   b. **Requirements-driven agents** — analyze requirements content and add agents from the Requirements-Driven Agents table as warranted.
+   c. **Log the full invocation list** to console: `"Mandatory agents: {list with expected doc names}. Requirements-driven agents: {list}."`
+   d. **Execute in wave order** (per CLAUDE.md Design Phase Waves), one invocation per component:
+      - Wave 1 (Foundation): ui-ux-design (for 90- screen docs), data-design, security-design — parallel
+      - Wave 2 (Core): library-design, backend-design — parallel, one per component
+      - Wave 3 (Application): frontend-design, agent-design — parallel, one per component
+      - Wave 4 (Integration): integration-design
+      - Wave 5 (Infrastructure): infrastructure-design
+   e. For each agent invocation: if foundational doc exists → `mode: update`, if missing → `mode: create`
 6. **Update 00-design-overview.md** with reference to new work
 7. **Validate** requirements coverage for current work
+8. **Pre-completion design doc checklist** — before returning success, verify ALL mandatory docs exist:
+   a. Build expected doc list from the mandatory invocations in step 5a
+   b. For each expected doc, verify the file exists in `design-docs/`
+   c. **If any mandatory doc is missing:** return `status: blocked` with `blocked_reason` listing the missing docs and which agents failed or were skipped. Do NOT return success.
+   d. **If all mandatory docs exist:** proceed to return success
 
 ## Document Generation
 
@@ -52,6 +65,39 @@ Master coordinator for transforming requirements into design documents.
 | Integration | integration-design-agent | 50-api-contracts.md |
 | Infrastructure | infrastructure-design-agent | 60-infrastructure.md |
 | UI/UX | ui-ux-design-agent | 90-{screen-name}.md |
+
+## Mandatory Component Design Rules
+
+The requirements-analyzer output identifies components by type (`components.frontends`, `components.backends`, `components.agents`, `components.libraries`). Each identified component MUST have its corresponding design doc(s) created. This is not discretionary.
+
+### Mandatory Per-Component Agents
+
+| Analyzer Output | Has UI? | Required Agent(s) | Required Doc(s) |
+|-----------------|---------|-------------------|-----------------|
+| `components.frontends[*]` | Yes | frontend-design-agent + ui-ux-design-agent | `30-{name}.md` + `90-{name}.md` |
+| `components.backends[*]` | No | backend-design-agent | `20-{name}.md` |
+| `components.agents[*]` | No | agent-design-agent | `40-{name}.md` |
+| `components.libraries[*]` | No | library-design-agent | `10-{name}.md` |
+
+**Agents (background workers) interface through backends and have no UI. They NEVER trigger ui-ux-design-agent. Only frontend components trigger UI/UX screen design docs (90-).**
+
+Each agent is invoked once per identified component instance. Example: if the analyzer identifies 2 frontends (`admin-ui` and `user-portal`), that produces 4 mandatory invocations:
+- frontend-design-agent for `30-admin-ui.md`
+- frontend-design-agent for `30-user-portal.md`
+- ui-ux-design-agent for `90-admin-ui.md`
+- ui-ux-design-agent for `90-user-portal.md`
+
+### Requirements-Driven Agents
+
+These are invoked when the requirements content warrants them. The orchestrator uses judgment based on the requirements-analyzer output:
+
+| Design Area | Agent | Doc | Trigger |
+|-------------|-------|-----|---------|
+| Data architecture | data-design-agent | `02-*.md` | Requirements contain data/schema concerns |
+| Security architecture | security-design-agent | `03-*.md` | Requirements contain security concerns |
+| Integration/API contracts | integration-design-agent | `50-*.md` | Requirements contain API/integration concerns |
+| Infrastructure | infrastructure-design-agent | `60-*.md` | Requirements contain deployment/infra concerns |
+| Style guide | ui-ux-design-agent | `01-style-guide.md` | Requirements contain UI style/theming concerns |
 
 ## Agent Invocation Context
 
@@ -168,6 +214,9 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - [ ] 100% requirements coverage for current work
 - [ ] Cross-references consistent
 - [ ] 00-design-overview.md updated with new work reference
+- [ ] **Mandatory: All per-component agents invoked** (one per identified component per the Mandatory Per-Component Agents table)
+- [ ] **Mandatory: All expected design docs verified to exist** (pre-completion checklist step 8 passed — `missing_docs` is empty)
+- [ ] **Mandatory: `component_mapping` included in log entry** for Task Manager semantic validation
 - [ ] **Memory: Searched memory for existing designs and decisions before orchestration**
 - [ ] **Memory: Orchestration summary stored in memory MCP**
 - [ ] **Memory: All design documents indexed via `index_docs()`**
@@ -189,7 +238,16 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
   "files_modified": [],
   "decisions": ["Orchestration decisions made"],
   "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}},
+  "expected_docs": ["design-docs/30-admin-ui.md", "design-docs/90-admin-ui.md"],
+  "missing_docs": [],
+  "agents_invoked": ["frontend-design-agent", "ui-ux-design-agent"],
+  "component_mapping": {
+    "frontends": [{"name": "admin-ui", "docs": ["30-admin-ui.md", "90-admin-ui.md"]}],
+    "backends": [],
+    "agents": [],
+    "libraries": []
+  }
 }
 </log-entry>
 ```
@@ -202,6 +260,10 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - `decisions`: Array of orchestration decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
 - `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
+- `expected_docs`: Array of all mandatory design docs that must exist (full paths) — MANDATORY
+- `missing_docs`: Array of mandatory docs that were not created; must be empty for `action: COMPLETE` — MANDATORY
+- `agents_invoked`: Array of design agent names actually invoked — MANDATORY
+- `component_mapping`: Object mapping each component type to its instances and their required docs — MANDATORY. Task Manager uses this for semantic validation
 
 ## Return Format
 

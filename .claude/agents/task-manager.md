@@ -55,8 +55,10 @@ Update the task list **immediately** when:
    - Architect Agent (creates architecture, ADRs) — log START before, COMPLETE after
 6. **Design phase** — invoke and log each agent:
    - Requirements Analyzer (parses requirements structure) — log START/COMPLETE
+   - **Capture the analyzer's component list** (`components.frontends`, `components.backends`, `components.agents`, `components.libraries`) for later validation
    - Design Orchestrator (coordinates specialized design agents) — log START/COMPLETE
    - Design Orchestrator sub-agents are logged by Design Orchestrator's log entries
+   - **Design phase semantic validation** — verify all components from the analyzer have corresponding mandatory design docs (see "Design Phase Semantic Validation Process" in Exit Criteria). If any mandatory docs are missing, re-invoke Design Orchestrator with the explicit list of missing components before proceeding to the next phase.
 7. **Planning phase** — invoke and log each agent:
    - Test Designer Agent — log START/COMPLETE
    - Data Agent — log START/COMPLETE
@@ -632,10 +634,32 @@ If exit criteria fail but user wants to proceed:
 ### Exit Criteria by Phase
 
 **Design Phase:**
-- All required design documents exist (check prefixes 00- through 60-)
+- **Mandatory per-component docs exist** — cross-reference the Design Orchestrator's `component_mapping` from its log entry against actual files in `design-docs/`:
+  - For each frontend in `component_mapping.frontends`: verify both `30-{name}.md` AND `90-{name}.md` exist
+  - For each backend in `component_mapping.backends`: verify `20-{name}.md` exists
+  - For each agent in `component_mapping.agents`: verify `40-{name}.md` exists (agents have NO UI — no 90- docs)
+  - For each library in `component_mapping.libraries`: verify `10-{name}.md` exists
+- Work-specific design overview exists: `{seq}-design-{short_name}.md`
+- Master overview updated: `00-design-overview.md`
+- Design Orchestrator log entry has empty `missing_docs` array
 - Requirements traceability: each REQ-* ID mapped to design section
 - No `TBD` or `TODO` markers in design documents
 - User approval obtained (explicit confirmation)
+
+**Design Phase Semantic Validation Process:**
+
+After Design Orchestrator returns, Task Manager performs this validation before transitioning to Implementation:
+
+1. **Parse the Design Orchestrator's log entry** — extract `component_mapping` and `expected_docs`
+2. **If Design Orchestrator did not provide `component_mapping`:** Re-invoke requirements-analyzer to get the component list, then manually verify docs against it
+3. **For each component type in the mapping,** verify corresponding files exist in `design-docs/`:
+   - Glob `design-docs/30-*.md` → compare against `component_mapping.frontends`
+   - Glob `design-docs/90-*.md` → compare against `component_mapping.frontends`
+   - Glob `design-docs/20-*.md` → compare against `component_mapping.backends`
+   - Glob `design-docs/40-*.md` → compare against `component_mapping.agents`
+   - Glob `design-docs/10-*.md` → compare against `component_mapping.libraries`
+4. **If any mandatory doc is missing:** Create a remediation task to re-invoke the appropriate design agent for the missing component. Do NOT proceed to Implementation.
+5. **Log validation result** as a DECISION entry in the activity log (pass/fail, any missing docs)
 
 **Implementation Phase:**
 - Code reviewers pass: no critical or high severity issues

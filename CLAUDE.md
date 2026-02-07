@@ -437,6 +437,8 @@ Traceability of all agent actions. Designed for machine parsing. Full schema and
 | Integration | Integration Design | Application complete |
 | Infrastructure | Infrastructure Design | Integration complete |
 
+**Per-Component Invocation:** Wave agents are invoked once per identified component of the matching type. Example: if requirements-analyzer identifies 2 frontends (`admin-ui` and `user-portal`), the Application wave produces 2 frontend-design-agent invocations (for `30-admin-ui.md` and `30-user-portal.md`) plus 2 ui-ux-design-agent invocations for screen designs (for `90-admin-ui.md` and `90-user-portal.md`). Agents (background workers) have no UI — only agent-design-agent fires for them, never ui-ux-design-agent. See design-orchestrator.md § Mandatory Component Design Rules for the full mapping.
+
 ### Implementation Phase
 
 Parallel Developer agents when: different source directories, no shared utility modifications, separate database tables.
@@ -457,7 +459,7 @@ Task Manager validates exit criteria before phase transitions. Blocks if not met
 
 | Phase | Criteria |
 |-------|----------|
-| **Design** | All required design docs created, requirements traceability complete, no unresolved questions, user approval |
+| **Design** | Mandatory per-component docs created for every component identified by requirements-analyzer (frontends get `30-` + `90-`, backends get `20-`, agents get `40-` with no UI docs, libraries get `10-`); requirements-driven docs (`01-`, `02-`, `03-`, `50-`, `60-`) as warranted by content; requirements traceability complete, no unresolved questions, user approval |
 | **Implementation** | All code reviewers pass (no critical/high), no TODO/FIXME in committed code, no stubs, builds without errors, Conventional Commits |
 | **Testing** | Coverage minimum 70% (configurable), all tests passing, no critical/high security findings, performance benchmarks met |
 | **Documentation** | User docs complete, developer docs complete, API docs generated, README updated |
