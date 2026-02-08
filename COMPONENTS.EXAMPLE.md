@@ -4,13 +4,13 @@
 
 | ID | Name | Type | Path | Status |
 |----|------|------|------|--------|
-| user-ui | User Frontend | frontend | src/frontends/user-ui | active |
-| admin-ui | Admin Frontend | frontend | src/frontends/admin-ui | pending |
-| backend-api | Backend Server | backend | src/backend | complete |
-| base-agent-lib | Base Agent Library | library | src/libs/base-agent | complete |
-| ext-agent-lib | Extended Agent Library | library | src/libs/ext-agent | active |
-| data-processor | Data Processor | agent | src/agents/data-processor | pending |
-| notification-sender | Notification Sender | agent | src/agents/notification-sender | pending |
+| user-ui | User Frontend | frontend | components/user-ui/ | active |
+| admin-ui | Admin Frontend | frontend | components/admin-ui/ | pending |
+| backend-api | Backend Server | backend | components/backend-api/ | complete |
+| base-agent-lib | Base Agent Library | library | components/base-agent-lib/ | complete |
+| ext-agent-lib | Extended Agent Library | library | components/ext-agent-lib/ | active |
+| data-processor | Data Processor | agent | components/data-processor/ | pending |
+| notification-sender | Notification Sender | agent | components/notification-sender/ | pending |
 
 ---
 
@@ -20,7 +20,7 @@
 |-------|-------|
 | **Name** | User Frontend |
 | **Type** | frontend |
-| **Path** | src/frontends/user-ui |
+| **Path** | components/user-ui/ |
 | **Description** | React application for end users |
 | **Language** | TypeScript/React |
 | **Depends On** | backend-api |
@@ -36,7 +36,7 @@
 |-------|-------|
 | **Name** | Admin Frontend |
 | **Type** | frontend |
-| **Path** | src/frontends/admin-ui |
+| **Path** | components/admin-ui/ |
 | **Description** | React application for administrators |
 | **Language** | TypeScript/React |
 | **Depends On** | backend-api |
@@ -52,7 +52,7 @@
 |-------|-------|
 | **Name** | Backend Server |
 | **Type** | backend |
-| **Path** | src/backend |
+| **Path** | components/backend-api/ |
 | **Description** | REST API serving both frontends |
 | **Language** | Go |
 | **Depends On** | base-agent-lib |
@@ -68,7 +68,7 @@
 |-------|-------|
 | **Name** | Base Agent Library |
 | **Type** | library |
-| **Path** | src/libs/base-agent |
+| **Path** | components/base-agent-lib/ |
 | **Description** | Contains BaseAgent abstract class and common utilities |
 | **Language** | Python |
 | **Status** | complete |
@@ -81,7 +81,7 @@
 |-------|-------|
 | **Name** | Extended Agent Library |
 | **Type** | library |
-| **Path** | src/libs/ext-agent |
+| **Path** | components/ext-agent-lib/ |
 | **Description** | Abstract agent extending BaseAgent with queue integration |
 | **Language** | Python |
 | **Depends On** | base-agent-lib |
@@ -95,7 +95,7 @@
 |-------|-------|
 | **Name** | Data Processor |
 | **Type** | agent |
-| **Path** | src/agents/data-processor |
+| **Path** | components/data-processor/ |
 | **Description** | Processes incoming data feeds and stores results |
 | **Language** | Python |
 | **Depends On** | ext-agent-lib, backend-api |
@@ -110,7 +110,7 @@
 |-------|-------|
 | **Name** | Notification Sender |
 | **Type** | agent |
-| **Path** | src/agents/notification-sender |
+| **Path** | components/notification-sender/ |
 | **Description** | Sends notifications via email and push |
 | **Language** | Python |
 | **Depends On** | ext-agent-lib |
