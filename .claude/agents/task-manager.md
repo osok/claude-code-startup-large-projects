@@ -62,7 +62,7 @@ Update the task list **immediately** when:
 7. **Planning phase** — invoke and log each agent:
    - Test Designer Agent — log START/COMPLETE
    - Data Agent — log START/COMPLETE
-8. Create task list: `project-docs/{seq}-task-list-{short-name}.md` (**IMPORTANT**)
+8. Create task list: `project-docs/tasks/{seq}-{short-name}-tasks.md` (**IMPORTANT**)
 9. Execute implementation phase (see workflow order below) — continue logging all agents
 10. Update Claude.md when work complete
 
@@ -80,6 +80,8 @@ Update the task list **immediately** when:
 
 ## Task List Format
 
+**IMPORTANT:** The summary table format is consumed by an external Kanban board application and **MUST NOT be changed**. All standardized detail goes in the per-task detail sections below it.
+
 ```markdown
 # {Name} Task List
 Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
@@ -92,13 +94,81 @@ Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 | T002 | Implement API | blocked | T004 | Developer | Needs auth |
 | T003 | Write tests | pending | T002 | Test Coder | |
 | T004 | Setup auth | in-progress | - | Developer | Created for T002 |
+
+---
+
+## Task Details
+
+### T001 — Create schema
+
+| Field | Value |
+|-------|-------|
+| **Status** | complete |
+| **Agent** | Data Agent |
+| **Blocked-By** | - |
+| **Requirements** | REQ-002-DATA-001, REQ-002-DATA-002 |
+| **Design Ref** | 02-data-architecture.md §3.1 |
+| **Component** | backend-api |
+| **Files** | components/backend-api/db/schema.sql |
+| **Acceptance** | Schema matches data design, migrations run clean |
+
+**Description:**
+Create database schema and initial migration based on data architecture design.
+
+**Resolution:**
+Schema created with all tables. Migration tested successfully.
+
+---
+
+### T002 — Implement API
+
+| Field | Value |
+|-------|-------|
+| **Status** | blocked |
+| **Agent** | Developer |
+| **Blocked-By** | T004 |
+| **Requirements** | REQ-002-FN-001, REQ-002-INT-API-001 |
+| **Design Ref** | 20-backend-api.md §4.2 |
+| **Component** | backend-api |
+| **Files** | - |
+| **Acceptance** | All API endpoints return correct responses, integration tests pass |
+
+**Description:**
+Implement REST API endpoints for user management per backend design.
+
+**Resolution:**
+(pending)
 ```
+
+### Task Detail Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| **Status** | Yes | Mirrors summary table: `pending`, `in-progress`, `blocked`, `complete` |
+| **Agent** | Yes | Assigned agent |
+| **Blocked-By** | Yes | Task ID or `-` if not blocked |
+| **Requirements** | Yes | Requirement IDs this task addresses (comma-separated) |
+| **Design Ref** | Yes | Design document and section reference |
+| **Component** | Yes | Component ID from COMPONENTS.md (or `-` if cross-cutting) |
+| **Files** | On complete | Files created or modified (update when task completes) |
+| **Acceptance** | Yes | Criteria for marking task complete |
+
+**Description:** What the task involves. Written when task is created. 1-3 sentences.
+
+**Resolution:** What was done. Written when task completes. Empty or `(pending)` until then.
 
 ### Statuses
 - `pending` - Not started, waiting for dependencies
 - `in-progress` - Currently being worked on
 - `blocked` - Waiting for another task (see Blocked-By column)
 - `complete` - Done
+
+### Update Rules
+
+1. **Summary table and detail section MUST stay in sync** — when status changes in the summary, update the detail section's Status field too
+2. **Files field** — update when task completes with actual files created/modified
+3. **Resolution field** — write a brief summary of what was done when task completes
+4. **New tasks** — add both a summary table row AND a detail section
 
 ## Workflow Order
 
@@ -875,7 +945,7 @@ When all tasks in the task list reach `complete` status and all exit criteria pa
 
 ## Outputs
 
-- `project-docs/{seq}-task-list-{short-name}.md`
+- `project-docs/tasks/{seq}-{short-name}-tasks.md`
 - `project-docs/activity.log` (append only)
 - Updated Claude.md (Current Work status)
 - Updated COMPONENTS.md (component status, when component-scoped work completes)

@@ -335,7 +335,9 @@ Component commands require `COMPONENTS.md` at the project root. If absent: "No C
 1. Look up `## {id}` in `COMPONENTS.md`. If not found, show valid IDs and suggest closest match
 2. Extract all fields from component's detail section
 3. **Update component status to `active`** in both the Summary table and the detail section of `COMPONENTS.md`
-4. Write `**Component:** {id}` to Current Work (after Name, before Status)
+4. **Update Current Work in CLAUDE.md:**
+   - Write `**Component:** {id}` (after Name, before Status)
+   - Write `**Path:** {path}` (after Component, before Status) — using the Path from `COMPONENTS.md`
 5. Write `### Component Context` sub-section with hydrated metadata
 6. Display component details. If already targeted, previous target is replaced silently
 
@@ -368,11 +370,11 @@ Component commands require `COMPONENTS.md` at the project root. If absent: "No C
 ### `untarget`
 
 1. If no `**Component:**` field in Current Work, display "No component is currently targeted."
-2. Remove `**Component:**` line and `### Component Context` sub-section, preserve all other fields
+2. Remove `**Component:**` line, `**Path:**` line, and `### Component Context` sub-section, preserve all other fields
 
 ### Component Context Rules
 
-When a component is targeted, Current Work gains `**Component:** {id}` (after Name, before Status) and a `### Component Context` sub-section with a metadata table from COMPONENTS.md.
+When a component is targeted, Current Work gains `**Component:** {id}` and `**Path:** {path}` (after Name, before Status) and a `### Component Context` sub-section with a metadata table from COMPONENTS.md.
 
 1. Field is omitted entirely when no component is targeted (backward compatible)
 2. Only fields with values are included
