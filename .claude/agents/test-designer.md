@@ -20,10 +20,11 @@ Plans all tests based on architecture and design documents.
 **MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
-2. Load requirements document for current sequence
-3. Load architecture document for current sequence
-4. Load design document for current sequence
-5. Create `project-docs/{seq}-test-plan-{short-name}.md` (**IMPORTANT**)
+2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot proceed — unresolved code review findings: {list CR-IDs and statuses}". Do NOT plan or update tests until all findings are verified.
+3. Load requirements document for current sequence
+4. Load architecture document for current sequence
+5. Load design document for current sequence
+6. Create `project-docs/{seq}-test-plan-{short-name}.md` (**IMPORTANT**)
 6. Document required tests with traceability to requirements
 7. Can be re-invoked after design changes to update test plan
 

@@ -20,9 +20,10 @@ Executes tests and reports results.
 **MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
-2. Load testing convention file for test commands
-3. Validate environment is ready
-4. Run tests in priority order
+2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot run tests — unresolved code review findings: {list CR-IDs and statuses}". Do NOT execute any tests until all findings are verified.
+3. Load testing convention file for test commands
+4. Validate environment is ready
+5. Run tests in priority order
 5. Debug failures to identify root cause and category
 6. Report categorized results to Task Manager
 

@@ -188,6 +188,8 @@ Implement REST API endpoints for user management per backend design.
    e. Re-invoke reviewers that had findings (re-review mode)
    f. If new findings: loop to 6b for new findings only
    g. Gate: all findings must be `verified` before proceeding
+**⛔ CODE REVIEW GATE — HARD STOP BEFORE TESTING:**
+Before ANY testing work (steps 7-9), Task Manager MUST verify that EVERY code review finding has status = `verified` in the findings tracker. If ANY finding has status `open`, `resolved`, or `still_open`, DO NOT proceed to testing. Loop back to step 6b to resolve remaining findings. There are NO exceptions — this gate cannot be skipped, even with user override. A task list with unresolved code review findings is incomplete.
 7. Test Designer Agent (review/update test plan — final check)
 8. Test Coder Agent(s)
 9. Test Runner Agent
@@ -592,6 +594,8 @@ Task Manager enforces code consistency as a **mandatory quality gate** during th
 - Preserve context when suspending/resuming tasks
 - Enforce 3-level chain depth limit
 - Detect and resolve circular dependencies before creating them
+- **CRITICAL: A task list is NOT complete if code review findings are unresolved** — all CR-IDs must reach `verified` status before the task list can be considered done
+- **CRITICAL: NEVER invoke test agents (Test Designer for final review, Test Coder, Test Runner) while any code review finding is `open`, `resolved`, or `still_open`** — verify the findings tracker first
 - **CRITICAL: Execute ALL mandatory memory operations** - index_directory after implementation and testing phases
 - **CRITICAL: Store session state after EVERY phase transition**
 - **CRITICAL: Check memory_statistics() at workflow start**
@@ -658,7 +662,7 @@ Task Manager validates exit criteria before allowing phase transitions.
 | From Phase | To Phase | Required Criteria |
 |------------|----------|-------------------|
 | Design | Implementation | Design exit criteria met |
-| Implementation | Testing | Implementation exit criteria met |
+| Implementation | Testing | Implementation exit criteria met + **ALL code review findings verified** (see Code Review Gate) |
 | Testing | Documentation | Testing exit criteria met |
 | Documentation | Complete | Documentation exit criteria met |
 
@@ -732,7 +736,7 @@ After Design Orchestrator returns, Task Manager performs this validation before 
 5. **Log validation result** as a DECISION entry in the activity log (pass/fail, any missing docs)
 
 **Implementation Phase:**
-- Code reviewers pass: no critical or high severity issues
+- **All code review findings verified** — every CR-ID in the findings tracker MUST have status = `verified`. No `open`, `resolved`, or `still_open` findings may remain. This is a hard gate — testing CANNOT begin until this is satisfied.
 - No `TODO`, `FIXME`, or `HACK` markers in committed code
 - No stub implementations (search for `// stub`, `pass`, `NotImplemented`)
 - Build succeeds without errors

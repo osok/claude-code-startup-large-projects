@@ -20,9 +20,10 @@ Writes test code based on test plan.
 **MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
-2. Load test plan for current sequence
-3. Load testing convention file: `conventions/testing/{language}.md`
-4. Review source code to understand implementation
+2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot write tests — unresolved code review findings: {list CR-IDs and statuses}". Do NOT write or modify tests until all findings are verified.
+3. Load test plan for current sequence
+4. Load testing convention file: `conventions/testing/{language}.md`
+5. Review source code to understand implementation
 4a. Search Memory MCP for registered code patterns from similar components (`code_pattern` type)
 5. Write tests according to test plan (**IMPORTANT**)
 6. Target 70% coverage (functions and lines)

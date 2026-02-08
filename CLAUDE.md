@@ -462,7 +462,7 @@ Task Manager validates exit criteria before phase transitions. Blocks if not met
 | Phase | Criteria |
 |-------|----------|
 | **Design** | Mandatory per-component docs created for every component identified by requirements-analyzer (frontends get `30-` + `90-`, backends get `20-`, agents get `40-` with no UI docs, libraries get `10-`); requirements-driven docs (`01-`, `02-`, `03-`, `50-`, `60-`) as warranted by content; requirements traceability complete, no unresolved questions, user approval |
-| **Implementation** | All code reviewers pass (no critical/high), no TODO/FIXME in committed code, no stubs, builds without errors, Conventional Commits |
+| **Implementation** | **All code review findings verified** (every CR-ID status = `verified` in findings tracker — no `open`, `resolved`, or `still_open` findings may remain), no TODO/FIXME in committed code, no stubs, builds without errors, Conventional Commits |
 | **Testing** | Coverage minimum 70% (configurable), all tests passing, no critical/high security findings, performance benchmarks met |
 | **Documentation** | User docs complete, developer docs complete, API docs generated, README updated |
 
