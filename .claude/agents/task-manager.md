@@ -80,10 +80,11 @@ Update the task list **immediately** when:
 
 ## Task List Format
 
-**IMPORTANT:** The summary table format is consumed by an external Kanban board application and **MUST NOT be changed**. All standardized detail goes in the per-task detail sections below it.
+**IMPORTANT:** The summary table is consumed by an external Kanban board application. Its structure (columns, header row, separator row) **MUST NOT be changed**.
 
 ```markdown
 # {Name} Task List
+
 Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 
 ## Tasks
@@ -101,61 +102,36 @@ Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 
 ### T001 — Create schema
 
-| Field | Value |
-|-------|-------|
-| **Status** | complete |
-| **Agent** | Data Agent |
-| **Blocked-By** | - |
-| **Requirements** | REQ-002-DATA-001, REQ-002-DATA-002 |
-| **Design Ref** | 02-data-architecture.md §3.1 |
-| **Component** | backend-api |
-| **Files** | components/backend-api/db/schema.sql |
-| **Acceptance** | Schema matches data design, migrations run clean |
-
 **Description:**
-Create database schema and initial migration based on data architecture design.
+Create database schema and initial migration based on data architecture design. Must cover all entities from 02-data-architecture.md §3.1. Refs: REQ-002-DATA-001, REQ-002-DATA-002.
 
 **Resolution:**
-Schema created with all tables. Migration tested successfully.
+Schema created with all tables and constraints. Migration runs clean. Files: components/backend-api/db/schema.sql, components/backend-api/db/migrations/001_initial.sql.
 
 ---
 
 ### T002 — Implement API
 
-| Field | Value |
-|-------|-------|
-| **Status** | blocked |
-| **Agent** | Developer |
-| **Blocked-By** | T004 |
-| **Requirements** | REQ-002-FN-001, REQ-002-INT-API-001 |
-| **Design Ref** | 20-backend-api.md §4.2 |
-| **Component** | backend-api |
-| **Files** | - |
-| **Acceptance** | All API endpoints return correct responses, integration tests pass |
-
 **Description:**
-Implement REST API endpoints for user management per backend design.
+Implement REST API endpoints for user management per 20-backend-api.md §4.2. Refs: REQ-002-FN-001, REQ-002-INT-API-001.
 
 **Resolution:**
 (pending)
 ```
 
-### Task Detail Fields
+### Task Detail Rules
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| **Status** | Yes | Mirrors summary table: `pending`, `in-progress`, `blocked`, `complete` |
-| **Agent** | Yes | Assigned agent |
-| **Blocked-By** | Yes | Task ID or `-` if not blocked |
-| **Requirements** | Yes | Requirement IDs this task addresses (comma-separated) |
-| **Design Ref** | Yes | Design document and section reference |
-| **Component** | Yes | Component ID from COMPONENTS.md (or `-` if cross-cutting) |
-| **Files** | On complete | Files created or modified (update when task completes) |
-| **Acceptance** | Yes | Criteria for marking task complete |
+Each task in the summary table gets a corresponding `### {ID} — {Task name}` section under `## Task Details`.
 
-**Description:** What the task involves. Written when task is created. 1-3 sentences.
+**Description** (written when task is created):
+- What needs to be done (1-3 sentences)
+- Include requirement IDs (Refs: REQ-...) and design document references
+- Include component name if component-scoped
 
-**Resolution:** What was done. Written when task completes. Empty or `(pending)` until then.
+**Resolution** (written when task completes):
+- Summary of what was done
+- List files created or modified
+- Set to `(pending)` until task completes
 
 ### Statuses
 - `pending` - Not started, waiting for dependencies
@@ -165,10 +141,9 @@ Implement REST API endpoints for user management per backend design.
 
 ### Update Rules
 
-1. **Summary table and detail section MUST stay in sync** — when status changes in the summary, update the detail section's Status field too
-2. **Files field** — update when task completes with actual files created/modified
-3. **Resolution field** — write a brief summary of what was done when task completes
-4. **New tasks** — add both a summary table row AND a detail section
+1. **New tasks** — add both a summary table row AND a detail section
+2. **Resolution** — update when task completes with summary of work and files touched
+3. **Summary table is the source of truth for status** — detail sections provide context only
 
 ## Workflow Order
 
