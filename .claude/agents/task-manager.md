@@ -63,8 +63,9 @@ Update the task list **immediately** when:
    - Test Designer Agent — log START/COMPLETE
    - Data Agent — log START/COMPLETE
 8. Create task list: `project-docs/tasks/{seq}-{short-name}-tasks.md` (**IMPORTANT**)
-9. Execute implementation phase (see workflow order below) — continue logging all agents
-10. Update Claude.md when work complete
+9. **Validate task list format** — after creating the task list, verify EVERY task detail section contains: the 8-field metadata table (Status, Agent, Blocked-By, Requirements, Design Ref, Component, Files, Acceptance), a `**Description:**` block, and a `**Resolution:**` block. If any task is missing the metadata table or has fields omitted/reordered, fix it immediately before proceeding.
+10. Execute implementation phase (see workflow order below) — continue logging all agents
+11. Update Claude.md when work complete
 
 **CRITICAL: Every agent invocation from step 5 onward MUST have a START log entry written BEFORE the agent runs and a COMPLETE/ERROR entry written IMMEDIATELY after.** This applies to ALL agents without exception — architecture, design, planning, implementation, review, testing, documentation, and deployment agents. No agent invocation may occur without both a START and COMPLETE/ERROR log entry. If an agent is invoked and its log entries are missing, this is a workflow violation.
 
@@ -80,18 +81,21 @@ Update the task list **immediately** when:
 
 ## Task List Format
 
-**IMPORTANT:** The summary table is consumed by an external Kanban board application. Its structure (columns, header row, separator row) **MUST NOT be changed**.
+**⛔ MANDATORY FORMAT — NO DEVIATIONS ALLOWED**
+
+The task list is consumed by an external Kanban board application. Both the summary table AND the task detail sections have a strict format that **MUST be followed exactly**. Any deviation breaks external tooling and requires manual rework.
+
+**Every task detail MUST have:** (1) the metadata table with all 8 fields, (2) a Description section, (3) a Resolution section. No fields may be omitted, reordered, renamed, or restructured. Do not invent alternative formats, do not simplify, do not "improve" the layout. Copy the structure from the template below exactly.
 
 ```markdown
 # {Name} Task List
-
 Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 
 ## Tasks
 
 | ID | Task | Status | Blocked-By | Agent | Notes |
 |----|------|--------|------------|-------|-------|
-| T001 | Create schema | complete | - | Data Agent | |
+| T001 | Create schema | complete | - | Data Agent | All entities from 02-data-architecture.md |
 | T002 | Implement API | blocked | T004 | Developer | Needs auth |
 | T003 | Write tests | pending | T002 | Test Coder | |
 | T004 | Setup auth | in-progress | - | Developer | Created for T002 |
@@ -102,18 +106,40 @@ Seq: {NNN} | Requirements: {req-doc} | Design: {design-doc}
 
 ### T001 — Create schema
 
+| Field | Value |
+|-------|-------|
+| **Status** | complete |
+| **Agent** | Data Agent |
+| **Blocked-By** | - |
+| **Requirements** | REQ-002-DATA-001, REQ-002-DATA-002 |
+| **Design Ref** | 02-data-architecture.md §3.1 |
+| **Component** | backend |
+| **Files** | components/backend-api/db/schema.sql, components/backend-api/db/migrations/001_initial.sql |
+| **Acceptance** | Schema covers all entities, migration runs clean, foreign keys match ERD |
+
 **Description:**
-Create database schema and initial migration based on data architecture design. Must cover all entities from 02-data-architecture.md §3.1. Refs: REQ-002-DATA-001, REQ-002-DATA-002.
+Create database schema and initial migration based on data architecture design. Must cover all entities from 02-data-architecture.md §3.1.
 
 **Resolution:**
-Schema created with all tables and constraints. Migration runs clean. Files: components/backend-api/db/schema.sql, components/backend-api/db/migrations/001_initial.sql.
+Schema created with all tables and constraints. Migration runs clean on fresh database.
 
 ---
 
 ### T002 — Implement API
 
+| Field | Value |
+|-------|-------|
+| **Status** | blocked |
+| **Agent** | Developer |
+| **Blocked-By** | T004 |
+| **Requirements** | REQ-002-FN-001, REQ-002-INT-API-001 |
+| **Design Ref** | 20-backend-api.md §4.2 |
+| **Component** | backend |
+| **Files** | - |
+| **Acceptance** | REST endpoints for user CRUD, auth middleware integrated |
+
 **Description:**
-Implement REST API endpoints for user management per 20-backend-api.md §4.2. Refs: REQ-002-FN-001, REQ-002-INT-API-001.
+Implement REST API endpoints for user management per 20-backend-api.md §4.2.
 
 **Resolution:**
 (pending)
@@ -121,16 +147,42 @@ Implement REST API endpoints for user management per 20-backend-api.md §4.2. Re
 
 ### Task Detail Rules
 
-Each task in the summary table gets a corresponding `### {ID} — {Task name}` section under `## Task Details`.
+**⛔ STRICT FORMAT — Every task detail MUST follow this exact structure. No exceptions.**
+
+Each task in the summary table gets a corresponding `### {ID} — {Task name}` section under `## Task Details`. The section MUST contain: (1) a metadata table with exactly 8 rows in the exact order shown, (2) a `**Description:**` block, (3) a `**Resolution:**` block, (4) a `---` separator after each task. Omitting the metadata table, dropping fields, or restructuring the layout is a format violation that breaks external tooling.
+
+**Metadata table** (written when task is created):
+
+```markdown
+| Field | Value |
+|-------|-------|
+| **Status** | pending |
+| **Agent** | Developer |
+| **Blocked-By** | T001 |
+| **Requirements** | REQ-XXX-FN-NNN |
+| **Design Ref** | 20-backend-api.md §4.2 |
+| **Component** | backend |
+| **Files** | - |
+| **Acceptance** | What must be true for this task to be complete |
+```
+
+Field rules:
+- **Status**: Must match the summary table (`pending`, `in-progress`, `blocked`, `complete`)
+- **Agent**: Name of the assigned agent (Developer, Test Coder, Data Agent, etc.)
+- **Blocked-By**: Task ID(s) or `-` if none
+- **Requirements**: REQ-IDs, BUG-IDs, or `-` if none
+- **Design Ref**: Design doc reference or `-` if none
+- **Component**: Component name from COMPONENTS.md or `-`
+- **Files**: File paths created/modified (set to `-` until task completes)
+- **Acceptance**: Clear criteria for task completion (1 sentence)
 
 **Description** (written when task is created):
 - What needs to be done (1-3 sentences)
-- Include requirement IDs (Refs: REQ-...) and design document references
-- Include component name if component-scoped
+- Include design document references if applicable
 
 **Resolution** (written when task completes):
 - Summary of what was done
-- List files created or modified
+- Key details about the implementation approach
 - Set to `(pending)` until task completes
 
 ### Statuses
@@ -141,9 +193,11 @@ Each task in the summary table gets a corresponding `### {ID} — {Task name}` s
 
 ### Update Rules
 
-1. **New tasks** — add both a summary table row AND a detail section
-2. **Resolution** — update when task completes with summary of work and files touched
-3. **Summary table is the source of truth for status** — detail sections provide context only
+1. **New tasks** — add both a summary table row AND a detail section (with full metadata table)
+2. **Status sync** — keep metadata table Status in sync with summary table Status
+3. **Files** — update when task completes with actual file paths touched
+4. **Resolution** — update when task completes with summary of work
+5. **Summary table is the source of truth for status** — detail sections provide context
 
 ## Workflow Order
 
@@ -564,6 +618,7 @@ Task Manager enforces code consistency as a **mandatory quality gate** during th
 - **Task Manager is the ONLY writer to the task list** - other agents return structured output
 - **CRITICAL: Update task list IMMEDIATELY after each agent completes** - never defer or batch updates
 - **CRITICAL: Update task list IMMEDIATELY when any task status changes** - this includes creating new tasks
+- **⛔ CRITICAL: Task list format is LOCKED — every task detail section MUST have the 8-field metadata table (Status, Agent, Blocked-By, Requirements, Design Ref, Component, Files, Acceptance), a Description block, and a Resolution block. No fields may be omitted or reordered. No alternative formats permitted. Violations require full rework.**
 - Follow workflow order unless dependencies require changes
 - Never skip agents without explicit user approval
 - Preserve context when suspending/resuming tasks
@@ -931,6 +986,7 @@ When all tasks in the task list reach `complete` status and all exit criteria pa
 
 ## Success Criteria
 
+- [ ] **Task list format validated** — every task detail has the 8-field metadata table, Description, and Resolution
 - [ ] Task list created with all tasks from design
 - [ ] Each task has ID, dependencies, and assigned agent
 - [ ] All tasks reach `complete` status
