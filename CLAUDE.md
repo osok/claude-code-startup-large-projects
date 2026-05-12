@@ -43,6 +43,7 @@ A tag **END CLAUDE.MD** is placed at the end of this document to help identify w
 | Agent Design | Background worker designs | 40- | .claude/agents/agent-design-agent.md |
 | Integration Design | API contracts | 50- | .claude/agents/integration-design-agent.md |
 | Infrastructure Design | Cloud/Docker/ECS designs | 60- | .claude/agents/infrastructure-design-agent.md |
+| ML Design | Machine learning systems (training, serving, monitoring) | 70- | .claude/agents/ml-design-agent.md |
 
 ### Data & Infrastructure Agents
 
@@ -148,7 +149,7 @@ Once `lets begin` is invoked and requirements are approved, the orchestrator pro
 | | 5 | @design-orchestrator | Coordinate specialized design agents |
 | | 5a | └─ Foundation | @ui-ux-design, @data-design, @security-design (parallel) |
 | | 5b | └─ Core | @library-design, @backend-design (parallel) |
-| | 5c | └─ Application | @frontend-design, @agent-design (parallel) |
+| | 5c | └─ Application | @frontend-design, @agent-design, @ml-design (parallel) |
 | | 5d | └─ Integration | @integration-design |
 | | 5e | └─ Infrastructure | @infrastructure-design |
 | | | | Output: `design-docs/` with prefixed documents |
@@ -437,11 +438,11 @@ These two actions exist specifically so external watchers (Kanban app, Agent Flo
 |------|--------|--------------|
 | Foundation | UI-UX Design, Data Design, Security Design | None |
 | Core | Library Design, Backend Design | Foundation complete |
-| Application | Frontend Design, Agent Design | Core complete |
+| Application | Frontend Design, Agent Design, ML Design | Core complete |
 | Integration | Integration Design | Application complete |
 | Infrastructure | Infrastructure Design | Integration complete |
 
-**Per-Component Invocation:** Wave agents are invoked once per identified component of the matching type. Example: if requirements-analyzer identifies 2 frontends (`admin-ui` and `user-portal`), the Application wave produces 2 frontend-design-agent invocations (for `30-admin-ui.md` and `30-user-portal.md`) plus 2 ui-ux-design-agent invocations for screen designs (for `90-admin-ui.md` and `90-user-portal.md`). Agents (background workers) have no UI — only agent-design-agent fires for them, never ui-ux-design-agent. See design-orchestrator.md § Mandatory Component Design Rules for the full mapping.
+**Per-Component Invocation:** Wave agents are invoked once per identified component of the matching type. Example: if requirements-analyzer identifies 2 frontends (`admin-ui` and `user-portal`), the Application wave produces 2 frontend-design-agent invocations (for `30-admin-ui.md` and `30-user-portal.md`) plus 2 ui-ux-design-agent invocations for screen designs (for `90-admin-ui.md` and `90-user-portal.md`). Agents (background workers) have no UI — only agent-design-agent fires for them, never ui-ux-design-agent. ML systems (`components.ml_systems[*]`) have no UI either — only ml-design-agent fires for them, producing `70-ml-{name}.md`. See design-orchestrator.md § Mandatory Component Design Rules for the full mapping.
 
 ### Implementation Phase
 

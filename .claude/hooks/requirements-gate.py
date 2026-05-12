@@ -14,10 +14,17 @@ chance to correct course before code is written. See
 
 Allowed during the Requirements phase:
   - Edits anywhere under `requirement-docs/`
-  - Edits to CLAUDE.md itself (so status can be updated)
+  - Edits to CLAUDE.md, README.md
   - Edits to `project-docs/document-sequence-tracker.md`
   - Edits to `.claude/**` (so this hook itself is debuggable)
+  - Edits to `conventions/**` and `design-templates/**` (framework scaffolding)
+  - Edits to `.gitignore`
   - Edits to memory paths under `~/.claude/projects/.../memory/`
+  - Anything listed in `.claude/hooks/requirements-gate-allowlist.txt` if that
+    file exists (one path prefix per line; project-relative or absolute). This
+    file is gitignored in the framework template, so it only takes effect in
+    repos where someone has explicitly created it; sub-projects scaffolded
+    from the template get the strict built-in allow list only.
 
 Override: include the literal token `OVERRIDE-REQUIREMENTS-GATE` in any user
 message in the recent transcript and the hook will pass-through. Use this only
@@ -59,12 +66,50 @@ ALLOWED_PATH_PREFIXES = (
     "CLAUDE.md",
     "README.md",
     "MEMORY.md",
+    "conventions/",
+    "design-templates/",
+    ".gitignore",
 )
 
 # Absolute-path allow list (memory store outside the project root).
 ALLOWED_ABS_PREFIXES = (
     "/home/michael/.claude/projects/",
 )
+
+# Optional externalized allowlist. If present, each non-empty/non-comment line
+# is treated as an additional allowed path prefix (project-relative or absolute).
+# The file is intentionally NOT shipped with the framework template (it is in
+# the template's .gitignore), so sub-projects scaffolded from this repo do not
+# inherit any extra exceptions and the gate retains its full restrictive
+# behavior for them.
+ALLOWLIST_FILENAME = ".claude/hooks/requirements-gate-allowlist.txt"
+
+
+def read_external_allowlist(project_root: Path) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Load the optional local allowlist file.
+
+    Returns (relative_prefixes, absolute_prefixes). Missing file → empty tuples.
+    Lines beginning with '#' and blank lines are ignored.
+    """
+    f = project_root / ALLOWLIST_FILENAME
+    if not f.exists():
+        return (), ()
+    rels: list[str] = []
+    abss: list[str] = []
+    try:
+        for raw in f.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("/"):
+                abss.append(line)
+            else:
+                if line.startswith("./"):
+                    line = line[2:]
+                rels.append(line)
+    except OSError:
+        return (), ()
+    return tuple(rels), tuple(abss)
 
 
 def read_payload() -> dict:
@@ -105,10 +150,13 @@ def is_allowed_path(file_path: str, project_root: Path) -> bool:
         return True  # nothing to gate
     p = Path(file_path)
 
-    # Absolute path: check absolute allow-list, otherwise compare against project root.
+    extra_rels, extra_abss = read_external_allowlist(project_root)
+
+    # Absolute path: check absolute allow-list (built-in + external), otherwise
+    # compare against project root.
     if p.is_absolute():
         s = str(p)
-        for prefix in ALLOWED_ABS_PREFIXES:
+        for prefix in ALLOWED_ABS_PREFIXES + extra_abss:
             if s.startswith(prefix):
                 return True
         try:
@@ -122,7 +170,8 @@ def is_allowed_path(file_path: str, project_root: Path) -> bool:
 
     if rel_str.startswith("./"):
         rel_str = rel_str[2:]
-    return any(rel_str == ap.rstrip("/") or rel_str.startswith(ap) for ap in ALLOWED_PATH_PREFIXES)
+    combined = ALLOWED_PATH_PREFIXES + extra_rels
+    return any(rel_str == ap.rstrip("/") or rel_str.startswith(ap) for ap in combined)
 
 
 def transcript_has_override(transcript_path: str | None) -> bool:
@@ -185,7 +234,9 @@ def main() -> int:
         "implementation files may be edited.\n"
         f"Attempted to edit: {file_path}\n"
         "Allowed during this phase: requirement-docs/**, CLAUDE.md, README.md, "
-        "project-docs/document-sequence-tracker.md, .claude/**, memory paths.\n"
+        "project-docs/document-sequence-tracker.md, .claude/**, conventions/**, "
+        "design-templates/**, .gitignore, memory paths, plus anything listed "
+        "in .claude/hooks/requirements-gate-allowlist.txt (if present).\n"
         "To override for one tool call, include the literal token "
         f"`{OVERRIDE_TOKEN}` in your next user message.",
         file=sys.stderr,

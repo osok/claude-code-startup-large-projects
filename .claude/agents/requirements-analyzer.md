@@ -21,7 +21,7 @@ Parses requirements documents and produces structured analysis for design orches
 2. Parse ISO/IEC/IEEE 29148:2018 structure (9 sections)
 3. Extract document metadata (ID, version, status)
 4. Extract and categorize requirements by ID pattern
-5. Identify system components (frontends, backends, agents, libraries)
+5. Identify system components (frontends, backends, agents, libraries, ml_systems)
 6. Map requirements to components via Component attribute
 7. Identify cross-cutting concerns (security, performance, accessibility)
 8. Build traceability from Traces To attributes
@@ -72,6 +72,10 @@ components:
       requirements: [{REQ-IDs}]
   libraries:
     - name: {name}
+      requirements: [{REQ-IDs}]
+  ml_systems:
+    - name: {name}
+      task_type: classification|regression|ranking|clustering|generation|retrieval|reinforcement|other
       requirements: [{REQ-IDs}]
 
 requirements:

@@ -26,6 +26,10 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Python bytecode cache (hook scripts compile on first run)
+__pycache__/
+*.pyc
+
 # Environment files with secrets
 .env
 .env.local
@@ -37,3 +41,17 @@ Thumbs.db
 
 # Local scripts
 run-chrome.sh
+
+# ---------------------------------------------------------------------------
+# Local-only allowlist for the requirements-gate hook (this file only exists
+# in this repo). The hook reads .claude/hooks/requirements-gate-allowlist.txt
+# at runtime — one path prefix per line — and treats those paths as allowed
+# in addition to its built-in defaults.
+#
+# This repo IS the framework template, so almost every edit hits the gate.
+# We populate the local allowlist with everything we need to maintain the
+# framework. Sub-projects scaffolded from this template will NOT inherit the
+# allowlist file, so their gate keeps its full restrictive behavior — they
+# will be warned (blocked) before edits, exactly as designed.
+# ---------------------------------------------------------------------------
+.claude/hooks/requirements-gate-allowlist.txt

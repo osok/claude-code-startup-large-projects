@@ -4,11 +4,11 @@ A comprehensive framework of specialized sub-agents, slash-command skills, and e
 
 ## Overview
 
-This framework provides **27 coordinated AI agents**, **8 slash-command skills**, and **2 enforcement hooks** that work together to build your application:
+This framework provides **28 coordinated AI agents**, **8 slash-command skills**, and **2 enforcement hooks** that work together to build your application:
 
 - **Requirements Agent** — Elicits requirements using ISO/IEC/IEEE 29148:2018
 - **Architect Agent** — Makes technology and structure decisions; produces ADR-001 (naming conventions) before anything else
-- **Design Orchestrator** — Coordinates 9 specialized design agents in dependency-ordered waves
+- **Design Orchestrator** — Coordinates 10 specialized design agents in dependency-ordered waves
 - **Developer Agent** — Writes code following project conventions
 - **Test Agents** — Plan, write, and run tests (Test Runner fires **only** on explicit user instruction)
 - **Code Review Panel** — Four reviewers run in parallel: Requirements, Security, Integration, Conventions
@@ -58,7 +58,7 @@ The orchestrator stops for the user at four hard boundaries:
 3. **Test execution** — `@test-runner` fires only on an explicit user instruction
 4. **Phase-boundary surprise** — if something materially changes scope, the orchestrator stops and reports
 
-## Included Agents (27 total)
+## Included Agents (28 total)
 
 ### Core Workflow Agents
 
@@ -83,6 +83,7 @@ The orchestrator stops for the user at four hard boundaries:
 | **Agent Design** | 40- | Background workers and jobs |
 | **Integration Design** | 50- | API contracts between systems |
 | **Infrastructure Design** | 60- | Cloud, Docker, deployment |
+| **ML Design** | 70- | Machine learning systems — training, serving, monitoring |
 
 ### Implementation Agents
 
@@ -277,6 +278,7 @@ flowchart TB
             direction LR
             FRONT[Frontend Design]
             AGENT_D[Agent Design]
+            ML_D[ML Design]
         end
 
         INT_D[Integration Design]
@@ -352,7 +354,7 @@ flowchart TB
     classDef gate fill:#fff8e1,stroke:#ff6f00,stroke-width:2px
     classDef done fill:#e8f5e9,stroke:#1b5e20
 
-    class REQ,ADR1,ARCH,RA,DO,UIUX,DATA_D,SEC_D,LIB,BACK,FRONT,AGENT_D,INT_D,INFRA,TD,DA,TL,DEV,CR_REQ,CR_SEC,CR_INT,CR_CON,TD2,DOC,DEPLOY,TC,TR,TDB,DOC2 agent
+    class REQ,ADR1,ARCH,RA,DO,UIUX,DATA_D,SEC_D,LIB,BACK,FRONT,AGENT_D,ML_D,INT_D,INFRA,TD,DA,TL,DEV,CR_REQ,CR_SEC,CR_INT,CR_CON,TD2,DOC,DEPLOY,TC,TR,TDB,DOC2 agent
     class FIX,PASS decision
     class AUTHORIZE gate
     class DONE done
@@ -364,7 +366,7 @@ flowchart TB
 |-------|--------|--------|
 | **Requirements** | Requirements | `requirement-docs/` |
 | **Architecture** | Architect (ADR-001 first) | `project-docs/adrs/` |
-| **Design** | Requirements Analyzer → Design Orchestrator → 9 Specialized Agents | `design-docs/` |
+| **Design** | Requirements Analyzer → Design Orchestrator → 10 Specialized Agents | `design-docs/` |
 | **Planning** | Test Designer, Data Agent | Test plan, schemas, task list |
 | **Implementation** | Developer | Application code |
 | **Review** | 4 Code Reviewers (parallel): Requirements, Security, Integration, Conventions | Review reports, findings tracker |

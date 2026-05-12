@@ -37,7 +37,7 @@ Master coordinator for transforming requirements into design documents.
    d. **Execute in wave order** (per CLAUDE.md Design Phase Waves), one invocation per component:
       - Wave 1 (Foundation): ui-ux-design (for 90- screen docs), data-design, security-design — parallel
       - Wave 2 (Core): library-design, backend-design — parallel, one per component
-      - Wave 3 (Application): frontend-design, agent-design — parallel, one per component
+      - Wave 3 (Application): frontend-design, agent-design, ml-design — parallel, one per component
       - Wave 4 (Integration): integration-design
       - Wave 5 (Infrastructure): infrastructure-design
    e. For each agent invocation: if foundational doc exists → `mode: update`, if missing → `mode: create`
@@ -62,6 +62,7 @@ Master coordinator for transforming requirements into design documents.
 | Agent | agent-design-agent | 40-{agent-name}.md |
 | Integration | integration-design-agent | 50-api-contracts.md |
 | Infrastructure | infrastructure-design-agent | 60-infrastructure.md |
+| ML System | ml-design-agent | 70-ml-{system-name}.md |
 | UI/UX | ui-ux-design-agent | 90-{screen-name}.md |
 
 ## Mandatory Component Design Rules
@@ -76,8 +77,11 @@ The requirements-analyzer output identifies components by type (`components.fron
 | `components.backends[*]` | No | backend-design-agent | `20-{name}.md` |
 | `components.agents[*]` | No | agent-design-agent | `40-{name}.md` |
 | `components.libraries[*]` | No | library-design-agent | `10-{name}.md` |
+| `components.ml_systems[*]` | No | ml-design-agent | `70-ml-{name}.md` |
 
 **Agents (background workers) interface through backends and have no UI. They NEVER trigger ui-ux-design-agent. Only frontend components trigger UI/UX screen design docs (90-).**
+
+**ML systems have no UI of their own. They expose inference APIs (covered by Integration Design) and may be consumed by backends, agents, or frontends. ML systems NEVER trigger ui-ux-design-agent. If an ML system has an operator/inspection UI, that UI is a separate frontend component.**
 
 Each agent is invoked once per identified component instance. Example: if the analyzer identifies 2 frontends (`admin-ui` and `user-portal`), that produces 4 mandatory invocations:
 - frontend-design-agent for `30-admin-ui.md`
