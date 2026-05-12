@@ -29,8 +29,6 @@ existing_doc: design-docs/40-{agent-name}.md  # if mode=update
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-agent.md`
@@ -76,46 +74,6 @@ existing_doc: design-docs/40-{agent-name}.md  # if mode=update
 
 Link to: Backend Design, Data Design, Integration Design, Infrastructure Design
 
-## Memory Integration
-
-Agent Design Agent uses the Memory MCP to align background agent designs with existing infrastructure and messaging patterns.
-
-### Before Designing
-
-1. **Search for existing agent patterns:**
-   ```
-   memory_search(query: "background agent worker scheduled event-driven processing", memory_types: ["design", "component"])
-   ```
-   - Reuse established patterns for lifecycle management, error handling, idempotency
-
-2. **Retrieve design context:**
-   ```
-   get_design_context(component_name: "{agent_name}")
-   ```
-
-3. **Search for integration patterns** the agent will use:
-   ```
-   memory_search(query: "message queue events integration patterns", memory_types: ["design"])
-   ```
-
-4. **Search for registered code patterns** from existing agent implementations:
-   ```
-   memory_search(query: "background agent worker scheduled event-driven pattern implementation", memory_types: ["code_pattern"])
-   ```
-   - Understand how similar agents are currently implemented to inform design decisions
-
-### After Designing
-
-4. **Store agent specifications:**
-   ```
-   memory_add(memory_type: "component", content: "Background Agent: {name}. Type: {scheduled|event-driven|continuous}. Triggers: {triggers}. Dependencies: {services}. Idempotency: {strategy}.", metadata: {"component_name": "{agent_name}", "type": "background-agent", "work_seq": "{seq}"})
-   ```
-
-5. **MANDATORY: Index design documents created/modified:**
-   ```
-   index_file(file_path: "{design_doc_path}")
-   ```
-
 ## Constraints
 
 - Use template structure
@@ -134,9 +92,6 @@ Agent Design Agent uses the Memory MCP to align background agent designs with ex
 - [ ] Idempotency strategy specified
 - [ ] Error handling comprehensive
 - [ ] Resource requirements defined
-- [ ] **Memory: Searched memory for existing patterns and similar agents before designing**
-- [ ] **Memory: Agent specifications stored in memory MCP**
-- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -154,8 +109,7 @@ Agent Design Agent uses the Memory MCP to align background agent designs with ex
   "files_created": ["design-docs/40-email-worker.md", "design-docs/40-scheduler.md"],
   "files_modified": [],
   "decisions": ["Key agent design decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -167,7 +121,6 @@ Agent Design Agent uses the Memory MCP to align background agent designs with ex
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of agent design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

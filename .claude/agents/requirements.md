@@ -17,8 +17,6 @@ Triggered when user says `new work` or needs requirements gathered for new work.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 ### Initial Setup
 
 1. **Read Claude.md** to get Document Sequence Tracker
@@ -174,58 +172,6 @@ All requirements documents follow **ISO/IEC/IEEE 29148:2018** structure:
 | `REQ-{SEQ}-VER-{NNN}` | Verification | REQ-002-VER-001 |
 | `REQ-{SEQ}-DEP-{NNN}` | Deployment | REQ-002-DEP-001 |
 
-## Memory Integration
-
-Requirements Agent uses the Memory MCP to learn from prior requirements and avoid conflicts with existing work.
-
-### Before Gathering Requirements
-
-1. **Search for existing requirements** across all work sequences:
-   ```
-   memory_search(query: "requirements {domain area}", memory_types: ["requirements"])
-   ```
-   - Understand what has already been specified to avoid duplicates or conflicts
-   - Identify patterns and conventions from prior requirement documents
-
-2. **Search for design decisions** that may constrain new requirements:
-   ```
-   memory_search(query: "architectural decisions technology choices", memory_types: ["design"])
-   ```
-   - Ensure new requirements align with established architecture
-
-### During Requirements Elicitation
-
-3. **Store each requirement** as it is finalized:
-   ```
-   memory_add(memory_type: "requirements", content: "REQ-{SEQ}-FN-{NNN}: {requirement text}. Priority: {priority}. Component: {component}.", metadata: {"req_id": "REQ-{SEQ}-FN-{NNN}", "work_seq": "{seq}", "priority": "{priority}"})
-   ```
-
-4. **Check for duplicate requirements** before adding:
-   ```
-   find_duplicates(content: "{proposed requirement text}", memory_type: "requirements", threshold: 0.85)
-   ```
-   - If near-duplicate found, alert user and reference existing requirement
-
-### When Suggesting Requirements
-
-5. **Search for commonly paired requirements:**
-   ```
-   memory_search(query: "non-functional requirements security performance for {feature type}", memory_types: ["requirements", "design"])
-   ```
-   - Suggest NFRs that are commonly missed based on similar past work
-
-### On Completion
-
-6. **Bulk store all requirements** from the completed document:
-   ```
-   memory_bulk_add(memories: [{memory_type: "requirements", content: "REQ-{SEQ}-FN-001: ...", metadata: {...}}, ...])
-   ```
-
-7. **MANDATORY: Index requirements document:**
-   ```
-   index_file(file_path: "requirement-docs/{seq}-requirements-{short_name}.md")
-   ```
-
 ## Constraints
 
 - NO dates in documents (no creation date, revision date, etc.)
@@ -268,9 +214,6 @@ When user asks for suggestions:
 - [ ] User confirms requirements are complete
 - [ ] CLAUDE.md updated (Current Work, Document Sequence Tracker)
 - [ ] No traceability matrix included (separate concern)
-- [ ] **Memory: Searched memory for existing requirements and design decisions before gathering**
-- [ ] **Memory: All requirements stored in memory MCP via `memory_bulk_add()`**
-- [ ] **Memory: Requirements document indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -288,8 +231,7 @@ When user asks for suggestions:
   "files_created": ["requirement-docs/requirements.md"],
   "files_modified": [],
   "decisions": ["Key requirements decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -301,7 +243,6 @@ When user asks for suggestions:
 - `files_modified`: Updated requirement documents (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

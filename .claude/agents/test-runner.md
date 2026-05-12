@@ -9,6 +9,22 @@ model: sonnet
 
 Executes tests and reports results.
 
+## ⛔ CRITICAL — No Premature Testing
+
+**NEVER launch tests unless the user EXPLICITLY says to run them.**
+
+This is the testing execution gate. Even in autonomous mode, the orchestrator prepares the testing phase but waits for an explicit user instruction (e.g., "run tests", "fire the test runner", "go ahead and test", or any clear authorization) before invoking this agent.
+
+**Why:** Tests can have side effects (writes to test DBs, calls to external sandboxes, modifications to fixtures, container spin-up, billing). The user wants final control over when the test cycle begins.
+
+**How this gate is honored:**
+- Orchestrator may invoke `@test-designer` and `@test-coder` autonomously.
+- Orchestrator MUST NOT invoke `@test-runner` until the user issues an explicit run instruction.
+- If you (the test-runner agent) are invoked without such an instruction, return `blocked` with reason: "test-runner invoked without explicit user authorization — autonomous mode does not authorize test execution".
+- The orchestrator parent session enforces this by stopping at Step 13 of the Unified Agent Workflow and surfacing a prompt to the user before invoking this agent.
+
+See also: `feedback_no_premature_testing` (user memory) and CLAUDE.md § Autonomous Mode (boundary #3).
+
 ## Console Output Protocol
 
 **Required:** Output these messages to console:
@@ -16,8 +32,6 @@ Executes tests and reports results.
 - On completion: `test-runner ending...`
 
 ## Behavior
-
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
 2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot run tests — unresolved code review findings: {list CR-IDs and statuses}". Do NOT execute any tests until all findings are verified.
@@ -92,52 +106,6 @@ Test Runner MUST report to Task Manager:
 - Complex test refactoring
 - Environment configuration
 
-## Memory Integration (MANDATORY)
-
-Test Runner **MUST** use the Memory MCP for every test run. Memory operations are not optional — they are required steps that must be executed.
-
-### Before Running Tests (MANDATORY — Execute These Steps)
-
-1. **MANDATORY: Search for previous test runs:**
-   ```
-   memory_search(query: "test results {component} pass fail", memory_types: ["test_history"])
-   ```
-   - Establish baseline for comparison
-   - Identify historically flaky tests to flag early
-
-### After Running Tests (MANDATORY — Execute These Steps)
-
-2. **MANDATORY: Store test results** — This step is NOT optional. Execute after EVERY test run:
-   ```
-   memory_add(memory_type: "test_result", content: "Test run for Seq {seq}: Total: {count}. Passed: {pass}. Failed: {fail}. Coverage: {coverage}%. Duration: {duration}s. Flaky: {flaky_tests}.", metadata: {"category": "test-run", "work_seq": "{seq}", "pass_rate": "{percentage}", "total": {count}, "passed": {pass}, "failed": {fail}})
-   ```
-
-3. **MANDATORY: Store test history summary:**
-   ```
-   memory_add(memory_type: "test_history", content: "Test history for Seq {seq}: Total: {count}. Passed: {pass}. Failed: {fail}. Coverage: {coverage}%. Duration: {duration}s.", metadata: {"category": "test-run", "work_seq": "{seq}", "pass_rate": "{percentage}"})
-   ```
-
-4. **MANDATORY: Store failure details** for EACH failed test (do NOT skip any):
-   ```
-   memory_bulk_add(memories: [
-     {memory_type: "test_history", content: "Test failure: {test_name}. Category: {code_bug|test_bug|environment|etc}. Error: {message}. File: {file:line}. Component: {component}.", metadata: {"category": "test-failure", "work_seq": "{seq}", "failure_category": "{category}", "test_name": "{test_name}"}},
-     ...
-   ])
-   ```
-
-5. **Detect flaky tests** by comparing with history:
-   ```
-   memory_search(query: "test failure {test_name}", memory_types: ["test_history"])
-   ```
-   - If test has intermittent pass/fail history, flag as flaky
-
-### Performance Tracking (MANDATORY)
-
-6. **MANDATORY: Store performance baselines:**
-   ```
-   memory_add(memory_type: "test_history", content: "Test performance baseline: Suite: {suite}. Duration: {duration}s. Slow tests: {list}.", metadata: {"category": "test-performance", "work_seq": "{seq}", "suite": "{suite}", "duration_s": {duration}})
-   ```
-
 ## Constraints
 
 - Always validate environment first
@@ -161,11 +129,6 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
 - [ ] Flaky tests identified and flagged
 - [ ] Performance baseline tracked
 - [ ] All failures reported to Task Manager with category
-- [ ] **Memory: Searched memory for previous test runs and baselines before running tests**
-- [ ] **Memory: Test results stored via `memory_add()` with type "test_result"**
-- [ ] **Memory: Test history stored via `memory_add()` with type "test_history"**
-- [ ] **Memory: Each test failure stored individually via `memory_bulk_add()`**
-- [ ] **Memory: Performance baseline stored**
 
 ## Log Entry Output
 
@@ -183,8 +146,7 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
   "files_created": [],
   "files_modified": [],
   "decisions": ["Test categorization decisions"],
-  "errors": ["Failed test: test_name - category: code_bug"],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": ["Failed test: test_name - category: code_bug"]
 }
 </log-entry>
 ```
@@ -197,7 +159,6 @@ Test Runner **MUST** use the Memory MCP for every test run. Memory operations ar
 - `files_modified`: Usually empty for test runner
 - `decisions`: Test categorization and triage decisions
 - `errors`: Array of failed test details with categories
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

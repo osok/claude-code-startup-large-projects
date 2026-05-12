@@ -9,6 +9,8 @@ model: opus
 
 Reviews all implemented code to verify completeness against the requirements document. Identifies gaps, missing functionality, and incomplete implementations.
 
+> **Sibling reviewers (run in parallel during Review phase):** `code-reviewer-security`, `code-reviewer-integration`, `code-reviewer-conventions`. The four together form the full review panel. Each is responsible for its own slice — do not duplicate their checks here. Convention/naming violations belong to `code-reviewer-conventions`; report them to it, not in this report.
+
 ## Console Output Protocol
 
 **Required:** Output these messages to console:
@@ -16,8 +18,6 @@ Reviews all implemented code to verify completeness against the requirements doc
 - On completion: `code-reviewer-requirements ending...`
 
 ## Behavior
-
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
@@ -103,57 +103,6 @@ Requirements Doc: {path}
 2. {Specific recommendation}
 ```
 
-## Memory Integration
-
-Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-code traceability validation and **verify implementation consistency**.
-
-### During Review
-
-1. **Retrieve all requirements** for comprehensive coverage check:
-   ```
-   memory_search(query: "REQ-{SEQ} requirements functional interface data", memory_types: ["requirements"], limit: 100)
-   ```
-   - Build complete requirements checklist from memory, not just document parsing
-
-2. **Trace each requirement** to implementation:
-   ```
-   trace_requirements(requirement_text: "REQ-{SEQ}-FN-{NNN}: {description}")
-   ```
-   - Use memory's traceability to quickly locate implementing code
-
-3. **Retrieve design context** for expected behavior:
-   ```
-   get_design_context(component_name: "{component}")
-   ```
-   - Verify implementation matches design intent, not just requirements text
-
-4. **Search for prior review findings:**
-   ```
-   memory_search(query: "requirements review gap {component}", memory_types: ["test_history", "session"])
-   ```
-   - Check if previously identified gaps have been addressed
-
-5. **CRITICAL: Verify implementation follows established patterns:**
-   ```
-   check_consistency(code: "{implemented code}", component_name: "{component}")
-   memory_search(query: "archetype {component_type} pattern", memory_types: ["code_pattern"])
-   ```
-   - Even if a requirement is functionally met, flag it if the implementation deviates from the project's established patterns
-   - A requirement is NOT fully met if the code doesn't follow the project's coding standards
-   - Check that components of the same type implement requirements using the same structural approach
-
-### After Review
-
-6. **Store review results** for trend analysis:
-   ```
-   memory_add(memory_type: "test_history", content: "Requirements review for Seq {seq}: Coverage: {percentage}%. Gaps: {gap_count}. Critical gaps: {list}. Consistency issues: {count}. Fully implemented: {list}.", metadata: {"category": "requirements-review", "work_seq": "{seq}"})
-   ```
-
-7. **MANDATORY: Index review report:**
-   ```
-   index_file(file_path: "project-docs/{seq}-requirements-review-{short-name}.md")
-   ```
-
 ## Outputs
 
 - `project-docs/{seq}-requirements-review-{short-name}.md`
@@ -166,9 +115,6 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
 - [ ] All gaps documented with specifics
 - [ ] Recommendations provided for each gap
 - [ ] Report follows standard format
-- [ ] **Memory: Searched memory for requirements, design context, and code patterns during review**
-- [ ] **Memory: Review results stored in memory MCP**
-- [ ] **Memory: Review report indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -186,8 +132,7 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
   "files_created": ["project-docs/001-requirements-review-feature.md"],
   "files_modified": [],
   "decisions": ["Gap identification decisions"],
-  "errors": ["REQ-XXX-FN-003: Missing implementation in src/handler.go"],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": ["REQ-XXX-FN-003: Missing implementation in src/handler.go"]
 }
 </log-entry>
 ```
@@ -200,7 +145,6 @@ Requirements Reviewer uses the Memory MCP to perform thorough requirement-to-cod
 - `files_modified`: Usually empty for reviewers
 - `decisions`: Gap identification and classification decisions
 - `errors`: Array of requirement gaps found with details
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Re-Review Mode
 

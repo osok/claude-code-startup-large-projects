@@ -7,7 +7,9 @@ model: opus
 
 # Task Manager Agent
 
-Orchestrates all agent work, tracks tasks, handles inter-agent requests. **Task Manager is the ONLY agent that modifies the task list.**
+> **NOTE:** This file specifies the orchestrator role. In this environment the role is performed by the parent Claude Code session, **not** by spawning `@task-manager` as a subagent. Subagents cannot recursively spawn further sub-subagents, which would defeat the multi-agent decomposition. The parent reads this spec and performs it directly. See `CLAUDE.md` § Orchestration Model for the rationale.
+
+Orchestrates all agent work, tracks tasks, handles inter-agent requests. **The orchestrator role is the ONLY writer that modifies the task list.**
 
 ## Console Output Protocol
 
@@ -84,6 +86,12 @@ Update the task list **immediately** when:
 **⛔ MANDATORY FORMAT — NO DEVIATIONS ALLOWED**
 
 The task list is consumed by an external Kanban board application. Both the summary table AND the task detail sections have a strict format that **MUST be followed exactly**. Any deviation breaks external tooling and requires manual rework.
+
+**Strict status keywords:** Status values are matched verbatim by the Kanban app. Allowed values: `pending`, `in-progress`, `blocked`, `complete`, `failed`. **No synonyms** (not `in progress`, not `done`, not `inprogress`, not `complete (verified)`). The summary-table `Status` column and the per-task metadata `Status` field MUST use one of these exact strings.
+
+**Em-dash convention:** Task detail headings always use a true em-dash (`—`, U+2014), never a hyphen (`-`) or en-dash (`–`). Required form: `### T0NN — {Task name}`. The Kanban parser splits on the em-dash; a hyphen or en-dash silently breaks parsing.
+
+**Task list before code:** The task list file is the **first** artifact created at the start of the Planning phase (Step 6a in the Unified Agent Workflow). It exists BEFORE the first Developer agent is invoked. The orchestrator does not invoke any Implementation-phase agent until the task list file is present and every Implementation task has been scaffolded into it.
 
 **Every task detail MUST have:** (1) the metadata table with all 8 fields, (2) a Description section, (3) a Resolution section. No fields may be omitted, reordered, renamed, or restructured. Do not invent alternative formats, do not simplify, do not "improve" the layout. Copy the structure from the template below exactly.
 
@@ -205,10 +213,11 @@ Field rules:
 2. Data Agent
 3. Deployment Agent
 4. Developer Agent(s)
-5. **Code Review Phase** (all three run, can be parallel):
+5. **Code Review Phase** (all four run in parallel):
    - Code Reviewer - Requirements Agent
    - Code Reviewer - Security Agent
    - Code Reviewer - Integration Agent
+   - Code Reviewer - Conventions Agent (validates against `project-docs/adrs/ADR-001-naming-conventions.md`)
 6. **Review Resolution Phase** (if any reviewer found issues):
    a. Collect all findings into findings tracker (see Code Review Resolution Workflow)
    b. Route each finding to correct agent (Architect, Design Orchestrator, Developer, etc.)
@@ -253,10 +262,9 @@ notes: {context for next steps}
 **CRITICAL: Before invoking ANY agent for a task, ALWAYS mark that task as `in-progress` in the task list file and save immediately. The status cycle MUST be: `pending` → `in-progress` → `complete`/`blocked`/`failed`. Never skip the `in-progress` state.**
 
 **status: complete**
-1. **Validate memory operations**: Check that the agent's `<log-entry>` includes `"memory_ops"` with `"searched": true` and at least one entry in `"indexed"`. If missing, log a warning and note the gap — the agent did not follow the Memory Protocol.
-2. **IMMEDIATELY** mark task as `complete` in task list file
-3. Save the task list file
-4. Proceed to next task in workflow
+1. **IMMEDIATELY** mark task as `complete` in task list file
+2. Save the task list file
+3. Proceed to next task in workflow
 
 **status: blocked**
 1. **IMMEDIATELY** mark task as `blocked` in task list file
@@ -350,7 +358,7 @@ When code reviewers return results, Task Manager executes a structured resolutio
 
 ### Step 1: Collect and Record Findings
 
-After all three code reviewers complete, Task Manager:
+After all four code reviewers complete (Requirements, Security, Integration, Conventions), Task Manager:
 
 1. **Creates a findings tracker** in the task list as a new section:
 
@@ -380,6 +388,9 @@ Each finding is evaluated and routed based on its nature, not just its source:
 | **Implementation fix** | Design exists, code is wrong or incomplete | Developer | "SQL injection in query builder" |
 | **Integration wiring** | Components exist but aren't connected | Developer | "Frontend calls /api/export but no route exists" |
 | **Consistency violation** | Code doesn't match established patterns | Developer (with archetype reference) | "UserService doesn't extend BaseService" |
+| **Naming/case violation (within-layer)** | Identifier in one layer doesn't match ADR-001 case rule | Developer | "Python function `getUser` should be `get_user` per ADR-001" |
+| **Cross-layer naming mismatch** | Identifier in layer A doesn't agree with the serialization contract to layer B | Developer (or Architect if contract itself is unclear) | "DB column `user_id` mapped to ORM attribute `userId` with no alias" |
+| **ADR-001 gap** | A new layer or boundary surfaced that ADR-001 doesn't cover | Architect (extend or amend ADR-001) → then Developer | "Queue routing keys not declared in ADR-001" |
 
 **Routing rules:**
 - If the fix requires changing a design document → route to the appropriate Design Agent first, then Developer
@@ -458,13 +469,6 @@ open → resolved → verified
     still_open → (new fix task created) → resolved → verified
 ```
 
-### Memory Integration for Findings
-
-Store findings for cross-session tracking:
-```
-memory_add(memory_type: "test_history", content: "Code review finding {CR-ID}: {description}. Severity: {severity}. Routed to: {agent}. Resolution: {resolution}. Verified: {yes/no}.", metadata: {"category": "code-review-finding", "work_seq": "{seq}", "severity": "{severity}", "finding_id": "{CR-ID}"})
-```
-
 ---
 
 ### Legacy Quick Reference (Finding Routing by Reviewer)
@@ -506,112 +510,14 @@ When Test Runner reports categorized failures:
 
 Routing chain: try first agent, if issue persists, escalate to next.
 
-## Memory Integration (MANDATORY)
-
-Task Manager **MUST** use the Memory MCP at every workflow milestone. Memory operations are not optional — they are required steps that must be executed.
-
-### On Workflow Start (MANDATORY — Execute These Steps)
-
-1. **MANDATORY: Check system health FIRST:**
-   ```
-   memory_statistics()
-   ```
-   - Verify memory system is operational before proceeding
-   - If unhealthy, warn user and continue with degraded functionality
-
-2. **MANDATORY: Search for session context:**
-   ```
-   memory_search(query: "session state work sequence {seq} {short_name}", memory_types: ["session"])
-   ```
-   - Retrieve last session state to detect where work left off
-   - Check for stale in-progress tasks from interrupted sessions
-
-3. **Search for prior decisions:**
-   ```
-   memory_search(query: "architectural decisions {short_name}", memory_types: ["design"])
-   ```
-   - Load context from prior phases to inform current routing
-
-### During Workflow Execution (MANDATORY)
-
-4. **Before invoking each agent**, search for relevant context:
-   ```
-   get_design_context(component_name: "{component being worked on}")
-   ```
-   - Provide retrieved context to the invoked agent
-
-5. **MANDATORY: After each phase transition**, store session state:
-   ```
-   memory_add(memory_type: "session", content: "Phase {phase} completed for Seq {seq} {short_name}. Tasks completed: {list}. Next phase: {next}.", metadata: {"work_seq": "{seq}", "phase": "{phase}", "category": "phase-transition"})
-   ```
-
-6. **Track requirement coverage** periodically:
-   ```
-   trace_requirements(requirement_text: "REQ-{SEQ}-FN-{NNN}: {description}")
-   ```
-   - Verify requirements are being addressed by implementation
-
-### After Implementation Phase (MANDATORY)
-
-7. **MANDATORY: Index ALL source files** — Execute after Developer agents complete:
-   ```
-   index_directory(directory_path: "{src_directory}", patterns: ["**/*.{lang}"])
-   ```
-   - This ensures all new code is searchable in memory
-   - Do NOT skip this step
-
-### After Testing Phase (MANDATORY)
-
-8. **MANDATORY: Index ALL test files** — Execute after Test Coder agents complete:
-   ```
-   index_directory(directory_path: "{test_directory}", patterns: ["**/*test*.{lang}", "**/*spec*.{lang}"])
-   ```
-
-### On Workflow Completion (MANDATORY)
-
-9. **MANDATORY: Store completion summary:**
-   ```
-   memory_add(memory_type: "session", content: "Work Seq {seq} {short_name} completed. All tasks done. Phases completed: {list}. Key decisions: {decisions}.", metadata: {"work_seq": "{seq}", "category": "work-complete"})
-   ```
-
-10. **MANDATORY: Index documentation:**
-    ```
-    index_docs(directory_path: "project-docs/", patterns: ["**/*.md"])
-    ```
-
-### Code Consistency Gate
+## Code Consistency Gate
 
 Task Manager enforces code consistency as a **mandatory quality gate** during the review phase.
 
-9. **After Developer completes a task**, run consistency check before proceeding:
-   ```
-   check_consistency(code: "{implemented code}", component_name: "{component}")
-   ```
-   - If the check finds pattern deviations, route back to Developer with specific instructions
-   - Developer MUST fix consistency issues before code review begins
-
-10. **After code review**, verify consistency findings are addressed:
-    - If Integration Reviewer reports consistency violations or base class reimplementations, these are **blocking issues** (same severity as stubs)
-    - Create fix tasks for each violation and route back to Developer
-    - Do NOT proceed to testing until consistency issues are resolved
-
-11. **Store archetype patterns** when the first component of a type is completed:
-    ```
-    memory_add(memory_type: "code_pattern", content: "Archetype established: {component_type}. File: {path}. This is the reference implementation - all future {component_type} components must match this structure.", metadata: {"pattern_type": "archetype", "component_type": "{type}", "work_seq": "{seq}"})
-    ```
-
-### Decision Points
-
-12. **Before routing to agents**, search for similar past issues:
-   ```
-   memory_search(query: "{failure description or gap type}", memory_types: ["test_history", "session"])
-   ```
-   - Use past failure patterns to route more effectively
-
-10. **Validate fixes** before marking tasks complete:
-    ```
-    validate_fix(fix_description: "{what was fixed}", code_changes: "{summary of changes}")
-    ```
+1. **After code review**, verify consistency findings are addressed:
+   - If Integration Reviewer reports consistency violations or base class reimplementations, these are **blocking issues** (same severity as stubs)
+   - Create fix tasks for each violation and route back to Developer
+   - Do NOT proceed to testing until consistency issues are resolved
 
 ## Constraints
 
@@ -626,9 +532,6 @@ Task Manager enforces code consistency as a **mandatory quality gate** during th
 - Detect and resolve circular dependencies before creating them
 - **CRITICAL: A task list is NOT complete if code review findings are unresolved** — all CR-IDs must reach `verified` status before the task list can be considered done
 - **CRITICAL: NEVER invoke test agents (Test Designer for final review, Test Coder, Test Runner) while any code review finding is `open`, `resolved`, or `still_open`** — verify the findings tracker first
-- **CRITICAL: Execute ALL mandatory memory operations** - index_directory after implementation and testing phases
-- **CRITICAL: Store session state after EVERY phase transition**
-- **CRITICAL: Check memory_statistics() at workflow start**
 
 ## Git Orchestration
 
@@ -811,6 +714,22 @@ This is the very first action Task Manager performs. No agent may be invoked unt
 
 The activity log uses **JSON Lines (JSONL)** format - one JSON object per line. See CLAUDE.md Activity Log section for full schema.
 
+### CRITICAL: No Speculative Memory
+
+**NEVER write data to memory/audit records until the actual value is known.**
+
+This applies to the activity log, task list resolutions, findings tracker fields, and any other persisted artifact. Specifically:
+
+- Do NOT write `duration_ms` until the agent has returned (you cannot know how long an in-flight invocation will take).
+- Do NOT write `files_created` or `files_modified` until the agent has reported them in its `<log-entry>` block.
+- Do NOT write a `COMPLETE` entry as a placeholder "in case" the agent succeeds — write `START` before invocation, then write the actual terminal entry (`COMPLETE`/`ERROR`/`BLOCKED`) only when the agent returns.
+- Do NOT pre-fill `Resolution` in a task detail section before the work is done.
+- Do NOT predict `parent_log_seq` before the relevant parent has been written.
+
+Why: speculative entries become wrong-and-permanent the moment reality diverges. The activity log is an audit trail; an audit trail that records what *might* have happened is worse than no audit trail at all.
+
+If you find yourself wanting to write a future value, stop and wait for the actual return.
+
 ### Log Entry Processing
 
 **MANDATORY: After EVERY agent action, append a log entry.**
@@ -925,7 +844,6 @@ Task Manager constructs the final log entry:
   "files_modified": {from agent log-entry},
   "decisions": {from agent log-entry},
   "errors": {from agent log-entry},
-  "memory_ops": {from agent log-entry — MANDATORY},
   "duration_ms": {calculated or null}
 }
 ```
@@ -996,9 +914,3 @@ When all tasks in the task list reach `complete` status and all exit criteria pa
 - [ ] Claude.md Current Work updated to reflect completion
 - [ ] Component status updated to `complete` in COMPONENTS.md (if component-scoped)
 - [ ] User informed of any blocked tasks requiring intervention
-- [ ] **Memory: `memory_statistics()` called at workflow start**
-- [ ] **Memory: Session state stored after EVERY phase transition**
-- [ ] **Memory: `index_directory()` called after implementation phase**
-- [ ] **Memory: `index_directory()` called after testing phase**
-- [ ] **Memory: `index_docs()` called on workflow completion**
-- [ ] **Memory: Completion summary stored on workflow completion**

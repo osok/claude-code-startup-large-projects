@@ -17,14 +17,11 @@ Writes test code based on test plan.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to get current work context
 2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot write tests — unresolved code review findings: {list CR-IDs and statuses}". Do NOT write or modify tests until all findings are verified.
 3. Load test plan for current sequence
 4. Load testing convention file: `conventions/testing/{language}.md`
 5. Review source code to understand implementation
-4a. Search Memory MCP for registered code patterns from similar components (`code_pattern` type)
 5. Write tests according to test plan (**IMPORTANT**)
 6. Target 70% coverage (functions and lines)
 7. Fix test code issues when reported by Test Runner
@@ -105,11 +102,7 @@ For each test in the plan:
 4. Add edge case coverage
 5. Verify mocks are properly configured
 
-## Memory Integration (MANDATORY)
-
-Test Coder **MUST** use the Memory MCP for every task. Memory operations are not optional — they are required steps that must be executed.
-
-### CRITICAL: Test Code Consistency
+## Test Code Consistency
 
 **All test files must look like they were written by the same person.** Tests for components of the same type (e.g., all service tests, all handler tests) MUST use:
 - The same setup/teardown approach
@@ -118,68 +111,11 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
 - The same file organization and naming
 - The same shared fixtures and test utilities (not local duplicates)
 
-### Before Writing Tests (MANDATORY — Execute These Steps)
-
-1. **Find the test archetype** - Locate existing tests for the same component type:
-   ```
-   code_search(code_snippet: "test_{ComponentType} describe {ComponentType}", language: "{language}")
-   memory_search(query: "test pattern archetype {component_type}", memory_types: ["code_pattern"])
-   ```
-   - Study the archetype's file structure, setup/teardown, and assertion style
-   - Your new test file MUST mirror this structure exactly
-
-2. **Search for shared test utilities and fixtures:**
-   ```
-   code_search(code_snippet: "fixture factory mock helper test_util", language: "{language}")
-   ```
-   - Use existing test utilities - do NOT create new local helpers that duplicate shared ones
-   - Reuse existing mock factories and fixture builders
-
-3. **Search for component design context:**
-   ```
-   get_design_context(component_name: "{component under test}")
-   ```
-   - Understand expected behavior, edge cases, and error handling
-
-4. **Search for base class test patterns:**
-   ```
-   code_search(code_snippet: "test Base{Type} test_base", language: "{language}")
-   ```
-   - If base class has tests, concrete class tests should follow the same structure
-   - Concrete class tests should test ONLY the added/overridden behavior, not base class behavior
-
-5. **Search for prior test failures:**
-   ```
-   memory_search(query: "test failure {component} {feature}", memory_types: ["test_history"])
-   ```
-
-### During Test Writing
-
-6. **Check test code consistency:**
-   ```
-   check_consistency(code: "{test code}", component_name: "{test_file}")
-   ```
-   - If consistency check fails, refactor to match the test archetype
-
-### After Writing Tests (MANDATORY — Execute These Steps)
-
-7. **MANDATORY: Index EVERY test file** — This step is NOT optional. For EACH test file created or modified:
-   ```
-   index_file(file_path: "{test_file_path}", language: "{language}")
-   ```
-   - Index the file immediately after writing it
-   - Do NOT skip this step for any reason
-   - If multiple test files are created, index each one
-
-8. **MANDATORY: Store test file metadata:**
-   ```
-   memory_add(memory_type: "code_pattern", content: "Test file: {test_file_path}. Tests component: {component_name}. Test count: {number_of_tests}. Coverage: {functions/methods covered}. Framework: {test_framework}.", metadata: {"pattern_type": "test-file", "component": "{component_name}", "language": "{language}", "work_seq": "{seq}", "file_path": "{test_file_path}"})
-   ```
-
-9. **Store test archetype** if this is the first test of its kind:
-   ```
-   memory_add(memory_type: "code_pattern", content: "Test archetype: {component_type} tests. Structure: {organization}. Setup: {setup_pattern}. Mocking: {mock_approach}. Assertions: {assertion_style}. Shared fixtures: {fixture_list}. File: {file_path}.", metadata: {"pattern_type": "test-archetype", "component_type": "{type}", "language": "{language}", "work_seq": "{seq}"})
-   ```
+Before writing tests:
+1. Locate existing tests for the same component type to use as structural template
+2. Search for shared test utilities and fixtures — reuse them, do not duplicate
+3. Read source code to understand expected behavior, edge cases, and error handling
+4. Review sibling component tests to ensure consistency in structure
 
 ## Constraints
 
@@ -204,9 +140,6 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
 - [ ] Mocks properly configured and documented
 - [ ] Test fixtures created for required test data
 - [ ] All tests pass when run locally
-- [ ] **Memory: ALL test files indexed via `index_file()`**
-- [ ] **Memory: Test file metadata stored via `memory_add()` with type "code_pattern"**
-- [ ] **Memory: Test archetype stored for first test of each component type**
 
 ## Log Entry Output
 
@@ -224,8 +157,7 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
   "files_created": ["tests/unit/test_auth.py"],
   "files_modified": ["tests/conftest.py"],
   "decisions": ["Key testing decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -237,7 +169,6 @@ Test Coder **MUST** use the Memory MCP for every task. Memory operations are not
 - `files_modified`: Updated test files and fixtures (full paths)
 - `decisions`: Array of testing decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

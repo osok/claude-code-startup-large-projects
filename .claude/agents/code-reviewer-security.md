@@ -9,6 +9,8 @@ model: opus
 
 Reviews all implemented code for security vulnerabilities based on OWASP guidelines and security best practices. Identifies vulnerabilities and recommends fixes.
 
+> **Sibling reviewers (run in parallel during Review phase):** `code-reviewer-requirements`, `code-reviewer-integration`, `code-reviewer-conventions`. The four together form the full review panel. Each is responsible for its own slice — do not duplicate their checks here. Naming/casing violations belong to `code-reviewer-conventions`; report them to it, not in this report.
+
 ## Console Output Protocol
 
 **Required:** Output these messages to console:
@@ -16,8 +18,6 @@ Reviews all implemented code for security vulnerabilities based on OWASP guideli
 - On completion: `code-reviewer-security ending...`
 
 ## Behavior
-
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
 2. Identify all code files in the implementation
@@ -176,53 +176,6 @@ Reviewer: Code-Reviewer-Security
 ...
 ```
 
-## Memory Integration
-
-Security Reviewer uses the Memory MCP to perform context-aware security reviews informed by threat models and past findings.
-
-### During Review
-
-1. **Retrieve security design policies:**
-   ```
-   memory_search(query: "security policy OWASP threat model authentication authorization", memory_types: ["design"])
-   ```
-   - Review code against project-specific security policies, not just generic OWASP
-   - Check dependency policies (approved licenses, vulnerability thresholds)
-
-2. **Search for prior security findings:**
-   ```
-   memory_search(query: "security vulnerability finding {component}", memory_types: ["test_history"])
-   ```
-   - Verify previously found vulnerabilities have been fixed
-   - Look for recurrence of similar vulnerability patterns
-
-3. **Check code patterns** against known vulnerability patterns:
-   ```
-   code_search(code_snippet: "{suspicious pattern e.g. SQL concatenation}", language: "{language}")
-   ```
-   - Systematic search for injection, XSS, and other vulnerability patterns
-
-4. **Retrieve threat model** for risk-prioritized review:
-   ```
-   memory_search(query: "threat model {component} attack vector", memory_types: ["design"])
-   ```
-   - Focus review on high-risk areas identified in threat model
-
-### After Review
-
-5. **Store security findings** for tracking and trend analysis:
-   ```
-   memory_bulk_add(memories: [
-     {memory_type: "test_history", content: "Security finding: {SEC-ID}. Severity: {severity}. Category: {OWASP}. File: {file:line}. Description: {description}. Status: open.", metadata: {"category": "security-finding", "work_seq": "{seq}", "severity": "{severity}"}},
-     ...
-   ])
-   ```
-
-6. **MANDATORY: Index security review report:**
-   ```
-   index_file(file_path: "project-docs/{seq}-security-review-{short-name}.md")
-   ```
-
 ## Outputs
 
 - `project-docs/{seq}-security-review-{short-name}.md`
@@ -235,9 +188,6 @@ Security Reviewer uses the Memory MCP to perform context-aware security reviews 
 - [ ] Each finding has specific remediation steps
 - [ ] Report follows standard format
 - [ ] No false positives (verified findings)
-- [ ] **Memory: Searched memory for security policies, threat models, and prior findings during review**
-- [ ] **Memory: Security findings stored in memory MCP**
-- [ ] **Memory: Review report indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -255,8 +205,7 @@ Security Reviewer uses the Memory MCP to perform context-aware security reviews 
   "files_created": ["project-docs/001-security-review-feature.md"],
   "files_modified": [],
   "decisions": ["Security vulnerability classifications"],
-  "errors": ["CRITICAL: SQL injection in src/db/query.go:42"],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": ["CRITICAL: SQL injection in src/db/query.go:42"]
 }
 </log-entry>
 ```
@@ -269,7 +218,6 @@ Security Reviewer uses the Memory MCP to perform context-aware security reviews 
 - `files_modified`: Usually empty for reviewers
 - `decisions`: Vulnerability classifications and severity ratings
 - `errors`: Array of security findings with severity and location
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Re-Review Mode
 

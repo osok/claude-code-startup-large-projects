@@ -9,6 +9,8 @@ model: opus
 
 Reviews all implemented code to ensure there are no stubs, TODO placeholders, or incomplete implementations. Verifies that all components are properly wired from frontend to backend to database.
 
+> **Sibling reviewers (run in parallel during Review phase):** `code-reviewer-requirements`, `code-reviewer-security`, `code-reviewer-conventions`. The four together form the full review panel. Each is responsible for its own slice — do not duplicate their checks here. Naming/casing violations belong to `code-reviewer-conventions`; report them to it, not in this report.
+
 ## Console Output Protocol
 
 **Required:** Output these messages to console:
@@ -16,8 +18,6 @@ Reviews all implemented code to ensure there are no stubs, TODO placeholders, or
 - On completion: `code-reviewer-integration ending...`
 
 ## Behavior
-
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
 
 1. Read Claude.md to get current work context
 2. Scan entire codebase for stub patterns and placeholders
@@ -167,74 +167,12 @@ Seq: {NNN}
 3. Complete password reset flow in AuthService
 ```
 
-## Memory Integration
-
-Integration Reviewer uses the Memory MCP to trace complete integration chains, **enforce code consistency across components**, and **detect reimplemented base class functionality**.
-
-### CRITICAL: Code Consistency and Base Class Reuse Checks
+## Code Consistency and Base Class Reuse Checks
 
 In addition to stub and wiring checks, this reviewer MUST verify:
 - Components of the same type are structurally identical
 - Concrete classes do not reimplement methods available in their base classes
 - Shared utilities are used instead of local duplicates
-
-### During Review
-
-1. **Retrieve integration design contracts:**
-   ```
-   memory_search(query: "API contract endpoint integration event", memory_types: ["design", "component"])
-   ```
-   - Verify implemented endpoints match designed contracts
-   - Check event producers/consumers are properly connected
-
-2. **Search for component inventory:**
-   ```
-   memory_search(query: "frontend backend service agent component", memory_types: ["component"])
-   ```
-   - Build complete picture of all components that should be wired together
-
-3. **Check for stub patterns** using code search:
-   ```
-   code_search(code_snippet: "TODO NotImplementedError not implemented stub placeholder", language: "{language}")
-   ```
-   - Systematic detection of incomplete implementations
-
-4. **Retrieve design context** for each integration chain:
-   ```
-   get_design_context(component_name: "{component}")
-   ```
-   - Understand expected wiring between components
-
-5. **Search for prior integration findings:**
-   ```
-   memory_search(query: "integration review stub wiring gap", memory_types: ["test_history"])
-   ```
-   - Verify previously found gaps have been closed
-
-6. **CRITICAL: Check code consistency across sibling components:**
-   ```
-   memory_search(query: "archetype {component_type} pattern structure", memory_types: ["code_pattern"])
-   code_search(code_snippet: "class {ComponentType}", language: "{language}")
-   ```
-   - Compare each component against the archetype for its type
-   - Flag structural deviations: different method ordering, different error handling, different logging
-   - Flag naming deviations: different variable/function naming conventions
-
-7. **CRITICAL: Detect reimplemented base class functionality:**
-   ```
-   memory_search(query: "base class {base_type} provided methods", memory_types: ["code_pattern"])
-   code_search(code_snippet: "class Base{Type}", language: "{language}")
-   ```
-   - For each concrete class, verify it does NOT reimplement methods from its base class
-   - Check that base class methods are called (not bypassed or duplicated)
-   - Verify `super()` is used when extending (not replacing) base behavior
-
-8. **Detect duplicated utility functions:**
-   ```
-   code_search(code_snippet: "{function_body_pattern}", language: "{language}")
-   ```
-   - Search for similar function implementations across different files
-   - Flag when the same logic appears in multiple places instead of being in a shared utility
 
 ### Consistency Report Section
 
@@ -259,18 +197,6 @@ Add to the integration review report:
 | {description} | {file1:line, file2:line} | Shared utility in {path} |
 ```
 
-### After Review
-
-9. **Store integration and consistency findings:**
-   ```
-   memory_add(memory_type: "test_history", content: "Integration review for Seq {seq}: Stubs: {count}. Wiring gaps: {count}. Consistency violations: {count}. Base class reimplementations: {count}. Duplicated utilities: {count}.", metadata: {"category": "integration-review", "work_seq": "{seq}"})
-   ```
-
-10. **MANDATORY: Index integration review report:**
-    ```
-    index_file(file_path: "project-docs/{seq}-integration-review-{short-name}.md")
-    ```
-
 ## Outputs
 
 - `project-docs/{seq}-integration-review-{short-name}.md`
@@ -284,9 +210,6 @@ Add to the integration review report:
 - [ ] All wiring gaps identified
 - [ ] Specific file/line references provided
 - [ ] Report follows standard format
-- [ ] **Memory: Searched memory for integration contracts, code patterns, and prior findings during review**
-- [ ] **Memory: Integration and consistency findings stored in memory MCP**
-- [ ] **Memory: Review report indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -304,8 +227,7 @@ Add to the integration review report:
   "files_created": ["project-docs/001-integration-review-feature.md"],
   "files_modified": [],
   "decisions": ["Stub and wiring gap identifications"],
-  "errors": ["STUB: src/api/handler.go:55 - NotImplemented", "WIRING: src/routes.go missing /api/users endpoint"],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": ["STUB: src/api/handler.go:55 - NotImplemented", "WIRING: src/routes.go missing /api/users endpoint"]
 }
 </log-entry>
 ```
@@ -318,7 +240,6 @@ Add to the integration review report:
 - `files_modified`: Usually empty for reviewers
 - `decisions`: Stub and wiring gap identifications
 - `errors`: Array of stubs and wiring gaps with file:line references
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

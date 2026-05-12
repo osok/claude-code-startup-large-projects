@@ -17,8 +17,6 @@ Creates and maintains documentation.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to get current work context
 2. Determine documentation mode needed
 3. Review existing documentation
@@ -110,49 +108,6 @@ Don't document:
 - Private implementation details
 - Obvious getter/setters
 
-## Memory Integration
-
-Documentation Agent uses the Memory MCP to generate comprehensive, accurate documentation by pulling from all project knowledge.
-
-### Before Documenting
-
-1. **Search for all design decisions** related to the documented area:
-   ```
-   memory_search(query: "{component or feature} design decisions architecture", memory_types: ["design"])
-   ```
-   - Ensure documentation reflects actual design decisions and rationale
-
-2. **Retrieve design context** for each component:
-   ```
-   get_design_context(component_name: "{component}")
-   ```
-   - Pull in API specs, component descriptions, and architectural patterns
-
-3. **Search for requirements** to verify documentation completeness:
-   ```
-   memory_search(query: "requirements {feature area}", memory_types: ["requirements"])
-   ```
-   - Ensure all user-facing requirements are documented
-
-4. **Trace requirements** to confirm implementation exists:
-   ```
-   trace_requirements(requirement_text: "{requirement}")
-   ```
-   - Only document implemented features
-
-### After Documenting
-
-5. **Store documentation decisions:**
-   ```
-   memory_add(memory_type: "design", content: "Documentation created for {component}: {doc_types}. Location: {paths}.", metadata: {"category": "documentation", "work_seq": "{seq}"})
-   ```
-
-6. **MANDATORY: Index all documentation files created/modified:**
-   ```
-   index_docs(directory_path: "{docs_directory}", patterns: ["**/*.md"])
-   ```
-   - Index user docs, developer docs, and any other documentation created
-
 ## Constraints
 
 - NO dates in documents
@@ -176,9 +131,6 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
 - [ ] API documentation covers all endpoints
 - [ ] Documentation style matches existing project docs
 - [ ] No outdated references remain
-- [ ] **Memory: Searched memory for design context and requirements before documenting**
-- [ ] **Memory: Documentation decisions stored in memory MCP**
-- [ ] **Memory: Created documentation indexed via `index_docs()`**
 
 ## Log Entry Output
 
@@ -196,8 +148,7 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
   "files_created": ["user-docs/guide.md", "developer-docs/api.md"],
   "files_modified": ["README.md"],
   "decisions": ["Documentation decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -209,7 +160,6 @@ Documentation Agent uses the Memory MCP to generate comprehensive, accurate docu
 - `files_modified`: Updated documentation files (full paths)
 - `decisions`: Array of documentation decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

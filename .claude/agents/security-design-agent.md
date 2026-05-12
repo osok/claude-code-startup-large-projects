@@ -28,8 +28,6 @@ existing_doc: design-docs/03-security-architecture.md  # if mode=update
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-security.md`
@@ -200,61 +198,6 @@ Define policies for third-party dependency management.
 
 Link to: All component designs, Data Design, Infrastructure Design
 
-## Memory Integration
-
-Security Design Agent uses the Memory MCP to maintain a comprehensive security posture across work items and learn from prior threat models.
-
-### Before Designing
-
-1. **Search for existing security decisions:**
-   ```
-   memory_search(query: "security architecture threat model authentication authorization", memory_types: ["design"])
-   ```
-   - Build on existing threat models rather than starting from scratch
-   - Ensure new security controls don't conflict with existing ones
-
-2. **Retrieve security context:**
-   ```
-   get_design_context(component_name: "security-architecture")
-   ```
-
-3. **Search for security requirements:**
-   ```
-   memory_search(query: "security requirements NFR-SEC", memory_types: ["requirements"])
-   ```
-
-4. **Search for prior security review findings:**
-   ```
-   memory_search(query: "security vulnerability finding", memory_types: ["test_history"])
-   ```
-   - Address patterns of vulnerabilities found in prior reviews
-
-5. **Search for registered code patterns** from security implementations:
-   ```
-   memory_search(query: "security authentication authorization middleware pattern implementation", memory_types: ["code_pattern"])
-   ```
-   - Understand how security is currently implemented to inform design decisions
-
-### After Designing
-
-5. **Store threat model entries** for security reviewers:
-   ```
-   memory_bulk_add(memories: [
-     {memory_type: "design", content: "Threat: {name}. Category: {STRIDE}. Attack vector: {vector}. Mitigating controls: {controls}. Risk: {level}.", metadata: {"category": "threat-model", "work_seq": "{seq}"}},
-     ...
-   ])
-   ```
-
-6. **Store security policies** for developer and reviewer reference:
-   ```
-   memory_add(memory_type: "design", content: "Security policy: {policy area}. Rules: {rules}. Approved libraries: {list}. License policy: {policy}.", metadata: {"category": "security-policy", "work_seq": "{seq}"})
-   ```
-
-7. **MANDATORY: Index design documents created/modified:**
-   ```
-   index_file(file_path: "{design_doc_path}")
-   ```
-
 ## Constraints
 
 - Use template structure
@@ -279,9 +222,6 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
 - [ ] Dependency security policies defined
 - [ ] License allowlist/blocklist documented
 - [ ] Vulnerability thresholds set
-- [ ] **Memory: Searched memory for existing security patterns and code implementations before designing**
-- [ ] **Memory: Threat models and security policies stored in memory MCP**
-- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -299,8 +239,7 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
   "files_created": ["design-docs/03-security-architecture.md"],
   "files_modified": [],
   "decisions": ["Key security design decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -312,7 +251,6 @@ Security Design Agent uses the Memory MCP to maintain a comprehensive security p
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of security design decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

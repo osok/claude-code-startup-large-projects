@@ -17,8 +17,6 @@ Plans all tests based on architecture and design documents.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to get current work context
 2. **Code Review Gate Check:** Read the task list for the current sequence. If a `## Code Review Findings` section exists, verify that EVERY finding has status = `verified`. If ANY finding is `open`, `resolved`, or `still_open`, STOP immediately and return `blocked` with reason: "Cannot proceed — unresolved code review findings: {list CR-IDs and statuses}". Do NOT plan or update tests until all findings are verified.
 3. Load requirements document for current sequence
@@ -82,54 +80,6 @@ For each requirement, plan tests covering:
 - **Error cases** - Invalid inputs, failure scenarios
 - **Edge cases** - Boundary conditions, race conditions
 - **Security** - Auth bypass, injection, input validation
-
-## Memory Integration
-
-Test Designer uses the Memory MCP to create comprehensive test plans informed by requirements, design decisions, and past test history.
-
-### Before Planning Tests
-
-1. **Search for all requirements** to ensure full coverage:
-   ```
-   memory_search(query: "requirements REQ-{SEQ} functional non-functional", memory_types: ["requirements"], limit: 50)
-   ```
-   - Build test cases for every requirement
-
-2. **Search for design decisions** that affect testing:
-   ```
-   memory_search(query: "design decisions {component} API authentication", memory_types: ["design"])
-   ```
-   - Design tests that validate design decisions
-
-3. **Search for past test history** and failure patterns:
-   ```
-   memory_search(query: "test failure pattern flaky", memory_types: ["test_history"])
-   ```
-   - Include regression tests for areas with past failures
-   - Add robustness tests for previously flaky areas
-
-4. **Retrieve component context** for test planning:
-   ```
-   get_design_context(component_name: "{component}")
-   ```
-
-5. **Trace requirements** to existing implementations:
-   ```
-   trace_requirements(requirement_text: "{requirement}")
-   ```
-   - Ensure tests target actual implemented code
-
-### After Planning
-
-6. **Store test plan** for future reference:
-   ```
-   memory_add(memory_type: "test_history", content: "Test plan for Seq {seq}: Unit tests: {count}. Integration tests: {count}. E2E tests: {count}. Coverage target: {target}%. Requirements covered: {list}.", metadata: {"category": "test-plan", "work_seq": "{seq}"})
-   ```
-
-7. **MANDATORY: Index test plan document:**
-   ```
-   index_file(file_path: "project-docs/{seq}-test-plan-{short-name}.md")
-   ```
 
 ## Code Review Finding Assessment
 
@@ -201,9 +151,6 @@ notes: {summary of test impact assessment}
 - [ ] Test data requirements documented
 - [ ] Requirements traceability matrix complete
 - [ ] Tests cover: happy path, bounds, errors, edge cases, security
-- [ ] **Memory: Searched memory for existing test patterns, failure history, and code patterns before planning**
-- [ ] **Memory: Test plan stored in memory MCP**
-- [ ] **Memory: Test plan document indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -221,8 +168,7 @@ notes: {summary of test impact assessment}
   "files_created": ["project-docs/test-plan.md"],
   "files_modified": [],
   "decisions": ["Key test planning decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -234,7 +180,6 @@ notes: {summary of test impact assessment}
 - `files_modified`: Updated test plans (full paths)
 - `decisions`: Array of test planning decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

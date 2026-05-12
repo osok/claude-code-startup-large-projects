@@ -26,8 +26,6 @@ Master coordinator for transforming requirements into design documents.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. **Read CLAUDE.md** to get current sequence and short name
 2. **Invoke requirements-analyzer** to parse `requirement-docs/{seq}-requirements-{short_name}.md`
 3. **Create work-specific design overview:** `design-docs/{seq}-design-{short_name}.md`
@@ -149,56 +147,6 @@ See [002-design-user-auth.md](002-design-user-auth.md) for full context.
 - Updated foundational docs (01- through 90-) - Existing docs UPDATED
 - `design-docs/00-design-overview.md` - Master overview UPDATED
 
-## Memory Integration
-
-Design Orchestrator uses the Memory MCP to coordinate design agents with full awareness of existing designs and decisions.
-
-### Before Orchestration
-
-1. **Search for existing design decisions** across all components:
-   ```
-   memory_search(query: "design decisions {short_name}", memory_types: ["design", "component"])
-   ```
-   - Understand what designs already exist to determine create vs update mode
-
-2. **Retrieve design context** for each component area:
-   ```
-   get_design_context(component_name: "{component}")
-   ```
-   - Pass this context to each specialized design agent for consistency
-
-3. **Check requirements coverage** from prior work:
-   ```
-   trace_requirements(requirement_text: "{requirement description}")
-   ```
-   - Identify which requirements already have design coverage
-
-### During Orchestration
-
-4. **Provide design agents with memory context** by including in invocation:
-   - Prior design decisions for their domain
-   - Related component patterns
-   - Cross-cutting concerns from requirements analysis
-
-### After Orchestration
-
-5. **Store orchestration summary:**
-   ```
-   memory_add(memory_type: "design", content: "Design orchestration for Seq {seq} {short_name} complete. Documents created/updated: {list}. Coverage: {percentage}%.", metadata: {"category": "orchestration-summary", "work_seq": "{seq}"})
-   ```
-
-6. **Validate no design conflicts** between agents:
-   ```
-   memory_search(query: "design {component_name}", memory_types: ["design"])
-   ```
-   - Check that parallel design agents didn't create conflicting decisions
-
-7. **MANDATORY: Index all design documents created/modified:**
-   ```
-   index_docs(directory_path: "design-docs/", patterns: ["**/*.md"])
-   ```
-   - This ensures all design work is searchable in memory for downstream agents
-
 ## Constraints
 
 - **NEVER duplicate** foundational documents
@@ -217,9 +165,6 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - [ ] **Mandatory: All per-component agents invoked** (one per identified component per the Mandatory Per-Component Agents table)
 - [ ] **Mandatory: All expected design docs verified to exist** (pre-completion checklist step 8 passed — `missing_docs` is empty)
 - [ ] **Mandatory: `component_mapping` included in log entry** for Task Manager semantic validation
-- [ ] **Memory: Searched memory for existing designs and decisions before orchestration**
-- [ ] **Memory: Orchestration summary stored in memory MCP**
-- [ ] **Memory: All design documents indexed via `index_docs()`**
 
 ## Log Entry Output
 
@@ -238,7 +183,6 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
   "files_modified": [],
   "decisions": ["Orchestration decisions made"],
   "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}},
   "expected_docs": ["design-docs/30-admin-ui.md", "design-docs/90-admin-ui.md"],
   "missing_docs": [],
   "agents_invoked": ["frontend-design-agent", "ui-ux-design-agent"],
@@ -259,7 +203,6 @@ Design Orchestrator uses the Memory MCP to coordinate design agents with full aw
 - `files_modified`: Updated design docs (full paths)
 - `decisions`: Array of orchestration decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 - `expected_docs`: Array of all mandatory design docs that must exist (full paths) — MANDATORY
 - `missing_docs`: Array of mandatory docs that were not created; must be empty for `action: COMPLETE` — MANDATORY
 - `agents_invoked`: Array of design agent names actually invoked — MANDATORY

@@ -1,11 +1,20 @@
 # Project
 
+## IMPORTANT
+
+When you work to compress the context, make sure to include **ALL** of this document, CLAUDE.MD. It has important notes, that while some may not be important in the current conversation they may be in the future conversation. This is **IMPORTANT**.
+
+A tag **END CLAUDE.MD** is placed at the end of this document to help identify what is in the document. Include all up to that point along with the tag for future compressions.
+
 ---
 
 ## Current Work
 
-**Seq:** (pending) | **Name:** (pending) | **Status:** Not Started
+**Seq:** (pending) | **Name:** (pending)
+**Status:** Not Started
+**Current Phase:** Awaiting Requirements
 **Task List:** (none)
+**Workspace Visible To:** Kanban app (reads `project-docs/tasks/{seq}-{short-name}-tasks.md`), Agent Flow VS Code plugin (reads `project-docs/activity.log`). The orchestrator MUST keep both files consistent at all times so these external watchers reflect the true state of work.
 
 ---
 
@@ -65,6 +74,7 @@
 | Code Reviewer - Requirements | Completeness against requirements | .claude/agents/code-reviewer-requirements.md |
 | Code Reviewer - Security | OWASP vulnerabilities | .claude/agents/code-reviewer-security.md |
 | Code Reviewer - Integration | Stubs, wiring gaps | .claude/agents/code-reviewer-integration.md |
+| Code Reviewer - Conventions | Cross-layer naming/case mismatches (validates against ADR-001) | .claude/agents/code-reviewer-conventions.md |
 
 ### Utility Agents
 
@@ -74,13 +84,66 @@
 
 ---
 
+## Orchestration Model
+
+**The orchestrator role** — managing phases, invoking specialized agents, writing the activity log, maintaining the task list, gating phase transitions — is performed by **the top-level Claude Code session** (the "parent orchestrator").
+
+- The `@task-manager` subagent definition in [.claude/agents/task-manager.md](.claude/agents/task-manager.md) is the **authoritative specification** for the orchestrator role: workflow ordering, status protocol, code review resolution, mid-task request handling, activity-log schema, task-list format, exit gates. The parent orchestrator follows that spec verbatim.
+- The parent orchestrator does **not** invoke `@task-manager` as a subagent. In this environment subagents cannot recursively spawn further sub-subagents, so a `task-manager` subagent cannot fulfill its own contract. The parent does the orchestration directly so that specialized agents (`@architect`, `@design-orchestrator`, `@developer`, `@code-reviewer-*`, `@test-coder`, `@test-runner`, `@documentation`, etc.) each run in their own isolated context with their own toolkits — preserving the multi-agent decomposition that is the whole point of the workflow.
+- All references to `@task-manager` elsewhere in this document (workflow tables, command flows, "invoke @task-manager" instructions) describe the **role**, not the implementation. The parent orchestrator performs that role.
+
+**Invariants the parent orchestrator MUST preserve:**
+
+1. **Activity log format** — `project-docs/activity.log` is JSONL with the exact schema in [task-manager.md §Activity Log Management](.claude/agents/task-manager.md). Every field (`log_seq`, `work_seq`, `timestamp`, `agent`, `action`, `phase`, `parent_log_seq`, `requirements`, `task_id`, `details`, `files_created`, `files_modified`, `decisions`, `errors`, `duration_ms`) is required. `log_seq` is monotonic across the entire file (never reused, never skipped). The parent reads the last line on resume to continue numbering. **Do not change the schema.**
+2. **Task list format** — `project-docs/tasks/{seq}-{short-name}-tasks.md`. The summary table and per-task detail sections follow the exact format in [task-manager.md §Task List Format](.claude/agents/task-manager.md): summary table with columns `ID | Task | Status | Blocked-By | Agent | Notes`; each task gets a `### {ID} — {Task}` detail section with the 8-field metadata table (Status, Agent, Blocked-By, Requirements, Design Ref, Component, Files, Acceptance), a `**Description:**` block, a `**Resolution:**` block, and a `---` separator. **An external Kanban application watches this file. Any deviation breaks tooling.**
+3. **Status protocol** — every task transitions `pending` → `in-progress` → `complete` / `blocked` / `failed` individually; status is set in the task list **before** invoking the agent and updated **immediately** when the agent returns. Never batch.
+4. **Code review gate** — every CR finding must be `verified` before testing begins. No exceptions, no overrides.
+
+**When the parent orchestrator is invoked** (entry points):
+
+| User says | Parent orchestrator action |
+|---|---|
+| `lets begin` | Initialize/append to `project-docs/activity.log`, create `project-docs/tasks/{seq}-{short-name}-tasks.md`, begin phase 3 (Architecture) |
+| `continue` | Read current task list, identify next actionable task, set `in-progress`, invoke the assigned agent, write `START` entry, etc. |
+| Mid-flow | Continue per task-manager.md protocol |
+
+If the agent system at some future date supports `task-manager`-as-subagent with full Task-tool recursion, this section can be revisited — but the format invariants above remain unconditional.
+
+---
+
+## Autonomous Mode
+
+Once `lets begin` is invoked and requirements are approved, the orchestrator proceeds autonomously through Architecture, Design, Planning, Implementation, and Review phases — making decisions, documenting them, and advancing the task list without user prompts.
+
+**The user observes via:**
+- Kanban app (reading `project-docs/tasks/{seq}-{short-name}-tasks.md`)
+- Agent Flow VS Code plugin (reading `project-docs/activity.log`)
+
+**Autonomous mode boundaries (HARD stops the orchestrator MUST respect):**
+1. **Requirements approval gate** — never bypassed (enforced by `.claude/hooks/requirements-gate.py`)
+2. **Code review findings gate** — every CR-ID `verified` before Testing
+3. **Testing execution gate** — orchestrator prepares the testing phase but waits for explicit user instruction to fire the test runner (see test-runner.md)
+4. **Phase-boundary surprises** — if the orchestrator discovers something that materially changes scope or contradicts an approved decision, it stops and reports rather than deciding unilaterally
+
+**Within those boundaries, the orchestrator does NOT ask:**
+- Routine architectural decisions (documented in ADRs)
+- Routine design choices (documented in design-docs/)
+- Routing of code review findings to fix agents
+- Re-review loops
+- Documentation generation
+
+**Phase advancement:** The orchestrator updates `**Current Phase:**` in the Current Work section of this file at every phase transition, BEFORE invoking the first agent of the new phase. This is what the requirements-gate hook reads and what external watchers (Kanban, Agent Flow) use as the single source of truth for "where are we right now".
+
+---
+
 ## Unified Agent Workflow
 
 | Phase | Step | Agent(s) | Output |
 |-------|------|----------|--------|
 | **Requirements** | 1 | @requirements | Elicit and document requirements (ISO 29148) → `requirement-docs/` |
-| **Orchestration** | 2 | @task-manager | **Orchestrates all remaining phases (2-17). Sole activity log writer.** |
-| **Architecture** | 3 | @architect | Architectural decisions, ADRs → `project-docs/adrs/` |
+| **Orchestration** | 2 | Parent orchestrator (per task-manager.md spec) | **Orchestrates all remaining phases (2-17). Sole activity log writer. See [Orchestration Model](#orchestration-model).** |
+| **Architecture** | 3a | @architect (ADR-001 first) | Produce `project-docs/adrs/ADR-001-naming-conventions.md` BEFORE any other architectural work. See [Naming Conventions](#naming-conventions). |
+| | 3b | @architect | Remaining architectural decisions, ADRs → `project-docs/adrs/` |
 | **Design** | 4 | @requirements-analyzer | Parse requirements structure |
 | | 5 | @design-orchestrator | Coordinate specialized design agents |
 | | 5a | └─ Foundation | @ui-ux-design, @data-design, @security-design (parallel) |
@@ -90,20 +153,20 @@
 | | 5e | └─ Infrastructure | @infrastructure-design |
 | | | | Output: `design-docs/` with prefixed documents |
 | **Planning** | 6 | @test-designer, @data-agent | Plan tests; define schemas (parallel) |
-| | 6a | @task-manager | Create task list |
+| | 6a | Parent orchestrator | Create task list |
 | **Implementation** | 7 | @developer(s) | Implement code |
-| **Review** | 8 | Code reviewers (3) | @code-reviewer-requirements, @code-reviewer-security, @code-reviewer-integration (parallel) |
-| | 8a | @task-manager | Collect findings into tracker (CR-IDs), route each to correct agent |
+| **Review** | 8 | Code reviewers (4, parallel) | @code-reviewer-requirements, @code-reviewer-security, @code-reviewer-integration, @code-reviewer-conventions |
+| | 8a | Parent orchestrator | Collect findings into tracker (CR-IDs), route each to correct agent |
 | | 8b | @test-designer | Assess findings for test impact, update test plan |
 | | 9 | Routed agents | Fix findings: @architect / @design-orchestrator / @developer as appropriate |
-| | 9a | @task-manager | Record resolutions in findings tracker |
+| | 9a | Parent orchestrator | Record resolutions in findings tracker |
 | | 10 | Code reviewers (re-review) | Verify fixes, check for new issues (only reviewers that had findings) |
 | | 10a | Loop to Step 9 | If still-open or new findings, until all verified |
 | **Test Prep** | 11 | @test-designer | Review/update test plan |
 | | 12 | @documentation, @deployment | Docs and env setup (parallel) |
-| **Testing** | 13 | @test-coder → @test-runner | Write & run tests |
+| **Testing** | 13 | @test-coder → @test-runner | Write & run tests (test runner fires ONLY on explicit user instruction) |
 | | 14 | @test-debugger | On failure: diagnose |
-| | 15 | @task-manager → Agent | Route fix |
+| | 15 | Parent orchestrator → Agent | Route fix |
 | | 16 | Loop to Step 13 | Until all pass |
 | **Finalize** | 17 | @documentation | Final updates |
 
@@ -113,14 +176,15 @@
 
 ## Key Decisions & Concepts
 
-1. **Task Manager as Sole Writer** - Only Task Manager modifies task lists
+1. **Orchestrator as Sole Writer** — Only the orchestrator role (parent Claude Code session) modifies task lists and the activity log. See [Orchestration Model](#orchestration-model). The `@task-manager` subagent definition is the authoritative spec for how.
 2. **Schemas as Source of Truth** - Data Agent maintains authoritative schemas
-3. **Convention Files** - Developer/Test Coder load language-specific conventions
+3. **Convention Files** - Developer/Test Coder load language-specific conventions; all reference [ADR-001 Naming Conventions](#naming-conventions)
 4. **Design Templates** - Comprehensive templates for each component type
-5. **Mid-Task Requests** - Agents can request work; Task Manager queues
+5. **Mid-Task Requests** - Agents can request work; orchestrator queues
 6. **Test Runner Routing** - Routes failures to appropriate agents
 7. **No Dates** - All documents are timeless
 8. **Environment Isolation** - NEVER pollute the host machine's global environment (see below)
+9. **Naming Conventions Decided Up Front** — The Architect's FIRST deliverable is `project-docs/adrs/ADR-001-naming-conventions.md`. See [Naming Conventions](#naming-conventions). No code is written until ADR-001 exists.
 
 ---
 
@@ -140,53 +204,6 @@
 **Python:** Always create venv before any `pip install`. Never use `sudo pip install`. Add `.venv/`, `__pycache__/` to `.gitignore`.
 **Node.js:** Never use `npm install -g` or `yarn global add`. Use `npx` for CLI tools. Add `node_modules/` to `.gitignore`.
 **Enforcement:** Deployment Agent sets up environment before installs. Developer Agent verifies environment is active. Test agents use project environment.
-
----
-
-## CRITICAL: Memory MCP Protocol — ALL Agents
-
-**Every agent MUST execute Memory MCP operations on every invocation. This is not optional. Agents that skip memory operations produce orphaned work that other agents cannot find, reuse, or validate.**
-
-### On Start — BEFORE Any Work
-
-**Step 1 of every agent's workflow is reading CLAUDE.md. Step 2 is searching memory.** No agent may begin its primary work without first executing:
-
-```
-memory_search(query: "{task-relevant terms}", memory_types: ["code_pattern", "design", "component"])
-```
-
-Specifically:
-- **Search `code_pattern`** — find registered patterns from similar components. If a similar component exists, follow its patterns exactly.
-- **Search `design`** — find prior decisions that constrain your work. Do not contradict existing ADRs or design decisions.
-- **Search `component`** — find registered components, schemas, and specs. Do not duplicate or conflict with existing components.
-- **Use `code_search()`** — for implementation agents (Developer, Test Coder), find actual code to use as archetypes.
-
-**If you find existing patterns, USE them. Do not reinvent what already exists.**
-
-### On Complete — AFTER All Work
-
-**The last step of every agent's workflow (before returning Task Result) is indexing work in memory.** No agent may return its Task Result without first executing:
-
-1. **Index every file created or modified:**
-   ```
-   index_file(file_path: "{path}", language: "{lang}")
-   ```
-   For directories of documentation:
-   ```
-   index_docs(directory_path: "{dir}", patterns: ["**/*.md"])
-   ```
-
-2. **Store significant results and decisions:**
-   ```
-   memory_add(memory_type: "{appropriate_type}", content: "{summary of work}", metadata: {"work_seq": "{seq}", ...})
-   ```
-
-### Enforcement
-
-- Every agent's `<log-entry>` block MUST include a `"memory_ops"` field confirming what was searched and what was indexed
-- Task Manager validates that `memory_ops` is present in agent results — missing memory operations are flagged as incomplete work
-- All agent success criteria include memory operation checkboxes — **these are mandatory exit criteria, not decorative suggestions**
-- If an agent completes work but did not search memory first or index its output, the work is considered incomplete even if all other criteria pass
 
 ---
 
@@ -214,77 +231,50 @@ Requirements include the sequence number to link them to specific work items.
 
 ## Document Sequence Tracker
 
-| Seq | Short Name | Component | Requirements | Design | Task List | Status |
-|-----|------------|-----------|--------------|--------|-----------|--------|
+**File:** `project-docs/document-sequence-tracker.md`
+
+This tracker is maintained in an external file to keep CLAUDE.md concise. Read the file to look up sequence numbers, artifact locations, and statuses.
+
+**Agent instructions:**
+- **`new work`**: Read the tracker file to determine the next sequence number. Add a new row when creating a work item.
+- **`initialize`**: Clear all rows in the tracker file except the header.
+- **`lets begin` / `continue`**: Read the tracker file to understand project history and locate artifacts for the current sequence.
 
 ---
 
 ## Commands
 
-| Command | Meaning |
-|---------|---------|
-| `initialize` | Reset project, ask what to build |
-| `new work` | Start new work item with fresh sequence, interview for requirements |
-| `lets begin` | Check requirements, collect if missing, get approval, start workflow |
-| `continue` | Resume current work from task list |
-| `list components` | Show all components from COMPONENTS.md (supports type filtering) |
-| `target {id}` | Set active component for subsequent work |
-| `show component {id}` | Display full details of a component |
-| `add component` | Interactively add a component to COMPONENTS.md |
-| `impact {id}` | Show components affected by changes to target |
-| `untarget` | Clear the active component targeting |
+All workflow commands are implemented as slash-commands (skills) under `.claude/skills/`. Invoke as `/{command}`. Plain English variants ("lets begin", "continue", etc.) are also recognized — the orchestrator dispatches to the same skill file.
 
-### `initialize` Workflow
+| Command | Skill File | Meaning |
+|---------|-----------|---------|
+| `/initialize` | [.claude/skills/initialize.md](.claude/skills/initialize.md) | Reset project, ask what to build (destructive) |
+| `/new-work` | [.claude/skills/new-work.md](.claude/skills/new-work.md) | Start new work item with fresh sequence, interview for requirements |
+| `/lets-begin` | [.claude/skills/lets-begin.md](.claude/skills/lets-begin.md) | Phase transition gate — check requirements, get approval, begin autonomous execution |
+| `/continue` | [.claude/skills/continue.md](.claude/skills/continue.md) | Resume current work from task list |
+| `/preflight` | [.claude/skills/preflight.md](.claude/skills/preflight.md) | Read-only diagnostic of orchestrator state (no writes, no agent invocations) |
+| `/store-work` | [.claude/skills/store-work.md](.claude/skills/store-work.md) | Add a work item to the backlog (user-invocable only) |
+| `/show-backlog` | [.claude/skills/show-backlog.md](.claude/skills/show-backlog.md) | Display backlog items with status |
+| `/doc-archive` | [.claude/skills/doc-archive.md](.claude/skills/doc-archive.md) | Regenerate doc READMEs, build distributable zip |
+| `list components` | (component command) | Show all components from COMPONENTS.md |
+| `target {id}` | (component command) | Set active component for subsequent work |
+| `show component {id}` | (component command) | Display full details of a component |
+| `add component` | (component command) | Interactively add a component to COMPONENTS.md |
+| `impact {id}` | (component command) | Show components affected by changes to target |
+| `untarget` | (component command) | Clear the active component targeting |
 
-When user says `initialize`, perform these actions **before** asking what to build:
+**Keyword recognition:** Each skill file's frontmatter `description` field defines when it fires. The natural-language equivalents in the table below are also recognized.
 
-1. **Reset Current Work section** to blank state (Seq/Name = pending, Status = Not Started, Phase = Awaiting Requirements)
-2. **Reset README.md** to minimal template with project name placeholder
-3. **Reset Document Sequence Tracker** - Clear all rows except header
-4. **Clear project artifacts** (if they exist):
-   - Delete files in `requirement-docs/` (except `README.md` and `_sample-requirements.md`)
-   - Delete files in `design-docs/` (except templates)
-   - Delete files in `project-docs/` (except `adrs/` folder structure)
-   - Clear `project-docs/activity.log` if it exists
-   - **Do NOT delete `COMPONENTS.md`** -- preserved across resets
-5. **After all resets complete**, ask: "What would you like to build?"
-
-### `new work` Workflow
-
-Creates a new work item without resetting existing project artifacts.
-
-1. **Determine next sequence number** from Document Sequence Tracker (3-digit zero-padded, e.g., 001 → 002 → 003)
-2. **Prompt for work description**, generate `short_name` (lowercase, hyphens, max 30 chars), confirm with user
-3. **Check for component targeting** (if `COMPONENTS.md` exists, ask if work is for a specific component)
-4. **Update Current Work section** in CLAUDE.md with new seq, short_name, status=Requirements Gathering. If component-scoped, add Component field and Component Context sub-section (see Component Context rules below)
-5. **If component-scoped**, update component status to `active` in `COMPONENTS.md` (both Summary table and detail section) — follows the Component Status Lifecycle
-6. **Update Document Sequence Tracker** with new row (seq, short_name, component if targeted, status=Requirements)
-7. **Create requirements document scaffold** in `requirement-docs/` with ISO 29148 structure
-8. **Ask user about requirements source:** upload/paste OR interview
-9. **If interview selected**, invoke @requirements agent for elicitation
-
-### `lets begin` Workflow
-
-1. **Check for requirements** in `requirement-docs/` (skip README.md and _sample-requirements.md)
-2. **If no requirements exist:** Invoke @requirements agent to collect interactively
-3. **If requirements exist:** Present summary, ask user for approval. If no, allow modifications
-4. **Once approved:** Update Current Work, **invoke @task-manager** to orchestrate all remaining phases (steps 2-17 of Unified Agent Workflow)
-
-**Important:** Task Manager is the orchestrator from step 2 onward. Do NOT invoke @architect or design agents directly — Task Manager invokes them so that all agent actions are logged to the activity log.
-
-### `continue` Workflow
-
-Resumes work from the current task list. **Task Manager is the primary coordinator for all resumed work.**
-
-1. **Invoke @task-manager** to coordinate ALL continued work
-2. Task Manager loads CLAUDE.md context, task list, activity log, and Component Context if present
-3. Resets any stale `in-progress` tasks to `pending` (interrupted session)
-4. Finds next actionable `pending` task with all dependencies `complete`
-5. Routes task to correct agent, passing component context if present
-6. Updates task list and activity log immediately on completion
-7. Repeats until all tasks complete, user intervention required, or phase transition needed
-
-**Important:** Always use `continue` to let Task Manager coordinate. Do not invoke individual agents directly.
+| Skill | Natural-Language Aliases |
+|-------|--------------------------|
+| `/initialize` | "initialize", "reset project" |
+| `/new-work` | "new work", "start new work", "begin new work item" |
+| `/lets-begin` | "lets begin", "let's begin", "begin work" |
+| `/continue` | "continue", "keep going", "resume" |
+| `/preflight` | "preflight", "where are we", "status check", "health check" |
+| `/store-work` | "store work", "add to backlog", "backlog this", "save for later", "track this work" |
+| `/show-backlog` | "show backlog", "list backlog", "what's in the backlog", "show work items", "pending work" |
+| `/doc-archive` | "doc archive", "build documentation archive", "package docs" |
 
 ---
 
@@ -355,11 +345,7 @@ Component commands require `COMPONENTS.md` at the project root. If absent: "No C
 4. Validate ID uniqueness and format, warn on unknown dependency references
 5. Set Status to `pending` (do NOT prompt for status — it follows the lifecycle automatically)
 6. Add row to Summary table and new H2 section to `COMPONENTS.md`
-7. **MANDATORY: Store component in memory:**
-   ```
-   memory_add(memory_type: "component", content: "Component {id}: {name}. Type: {type}. Path: {path}. Description: {description}. Language: {language}. Dependencies: {dependencies}. Status: pending.", metadata: {"component_id": "{id}", "component_type": "{type}", "path": "{path}", "language": "{language}"})
-   ```
-8. Ask about scaffolding the source directory
+7. Ask about scaffolding the source directory
 
 ### `impact {id}`
 
@@ -398,11 +384,11 @@ When a component is targeted, Current Work gains `**Component:** {id}` and `**Pa
 
 ## Activity Log
 
-Traceability of all agent actions. Designed for machine parsing. Full schema and writer protocol in task-manager.md.
+Traceability of all agent actions. Designed for machine parsing. Full schema and writer protocol in [task-manager.md §Activity Log Management](.claude/agents/task-manager.md).
 
 - **File:** `project-docs/activity.log`
-- **Format:** JSONL (one JSON object per line, UTF-8)
-- **Sole Writer:** Task Manager (adds `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, `duration_ms` to agent entries)
+- **Format:** JSONL (one JSON object per line, UTF-8) — schema defined in task-manager.md and unchanged by the orchestration model. Do NOT alter the field set or order.
+- **Sole Writer:** the orchestrator role (see [Orchestration Model](#orchestration-model)). In this environment that is the parent Claude Code session, which writes `log_seq`, `work_seq`, `timestamp`, `parent_log_seq`, `duration_ms` to agent entries directly. Sub-agents return `<log-entry>` blocks; the parent merges the orchestrator-managed fields and appends the line.
 
 ### Action Types
 
@@ -420,6 +406,22 @@ Traceability of all agent actions. Designed for machine parsing. Full schema and
 | `REVIEW_FAIL` | Code review failed | When reviewer finds issues |
 | `TEST_PASS` | Test(s) passed | When test execution succeeds |
 | `TEST_FAIL` | Test(s) failed | When test execution fails |
+| `PHASE_TRANSITION` | `**Current Phase:**` advanced to a new phase | Immediately AFTER updating CLAUDE.md, BEFORE invoking the first agent of the new phase |
+| `TASK_STATUS_CHANGE` | A task moved between statuses (`pending` → `in-progress`, etc.) | Immediately when task list is updated |
+
+**`PHASE_TRANSITION` entry shape:**
+
+```json
+{"agent": "orchestrator", "action": "PHASE_TRANSITION", "phase": "{new_phase}", "details": "Transitioned from {old_phase} to {new_phase}", "decisions": ["{summary of transition trigger}"]}
+```
+
+**`TASK_STATUS_CHANGE` entry shape:**
+
+```json
+{"agent": "orchestrator", "action": "TASK_STATUS_CHANGE", "phase": "{current_phase}", "task_id": "T0NN", "details": "{old_status} → {new_status}"}
+```
+
+These two actions exist specifically so external watchers (Kanban app, Agent Flow plugin, the `check-orchestration-bookkeeping` Stop hook) can pin orchestrator state to the log without parsing CLAUDE.md or the task list independently.
 
 ### Phase Values
 
@@ -500,65 +502,54 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ---
 
-## Memory Integration (MCP)
-
-**Required Dependency:** [claude-code-project-memory-mcp](https://github.com/osok/claude-code-project-memory-mcp) MCP server. Install and configure before using this framework.
-
-### Memory Types
-
-| Type | Purpose | Primary Writers | Primary Readers |
-|------|---------|-----------------|-----------------|
-| `requirements` | Stored requirements with IDs | Requirements Agent | All agents |
-| `design` | Architectural decisions, patterns, ADRs | Architect, Design Agents | All agents |
-| `code_pattern` | Indexed source code patterns | Developer, Test Coder | Developer, Test Coder |
-| `component` | Component specs, schemas, API endpoints | Design Agents, Data Agent | All agents |
-| `function` | Function-level code index | Auto-indexed | Developer, Test Coder |
-| `test_history` | Test results, failures, diagnoses, reviews | Test Runner, Test Debugger, Reviewers | Test Agents, Task Manager |
-| `session` | Session state, phase completions | Task Manager | Task Manager |
-| `user_preference` | User preferences and customizations | User interactions | All agents |
-
-### Memory Operations Reference
-
-| Operation | Description |
-|-----------|-------------|
-| `memory_search` | Semantic search across memories — use before any work |
-| `memory_add` / `memory_bulk_add` | Store new memory(s) — after completing significant work |
-| `memory_get` / `memory_update` | Retrieve or update by ID |
-| `find_duplicates` | Find near-duplicate memories — before adding |
-| `get_design_context` | Get design decisions for a component |
-| `trace_requirements` | Trace requirements to implementations |
-| `code_search` | Find similar code patterns |
-| `check_consistency` | Validate code follows established patterns |
-| `validate_fix` | Validate fix against design |
-| `index_file` / `index_directory` | Index source files for code_search |
-| `memory_statistics` | Check system health |
-| `normalize_memory` | Deduplicate and consolidate |
-| `export_memory` / `import_memory` | Backup and restore |
-| `graph_query` / `get_related` / `reindex` | Advanced graph queries and reindexing |
-
-### Code Consistency Enforcement
+## Code Consistency Enforcement
 
 All code must look like it was designed and developed by one person. Components of the same type must follow identical patterns.
 
-1. **Pattern Conformance** — Search memory for existing components of the same type; follow their structure exactly
+1. **Pattern Conformance** — Inspect existing components of the same type; follow their structure exactly
 2. **Base Class Reuse** — Never reimplement functionality from base classes or shared utilities
 3. **Structural Uniformity** — Same file organization, constructors, lifecycle methods, configuration
-4. **Naming Consistency** — Follow conventions established by the first component of that type
+4. **Naming Consistency** — Follow conventions established in ADR-001 (see [Naming Conventions](#naming-conventions)) and by the first component of that type
 
 See developer.md for detailed enforcement steps. Code reviewers flag structural mismatches, base class reimplementation, and naming/organization deviations.
 
-### Memory Best Practices
+---
 
-- Search before creating (avoid duplicates)
-- Use specific queries with requirement IDs and component names
-- Store actionable data with `work_seq` and category metadata
-- Index new source files after creating them
-- Run `normalize_memory` periodically
+## Naming Conventions
 
-### Memory Initialization
+**The Architect agent's FIRST deliverable is `project-docs/adrs/ADR-001-naming-conventions.md`.** No other architectural work, no design work, no implementation work proceeds until ADR-001 exists. This rule prevents the class of cross-layer naming bugs (DB column `user_id` vs ORM `userId` vs JSON `userID` vs frontend `User_ID`) that cost dozens of iterations to resolve.
 
-**On `initialize`:** Check `memory_statistics()`, index codebase with `index_directory`, store project overview and user preferences.
-**On `continue`:** Search for last session state (`memory_types: ["session"]`), load context for current phase.
+### What ADR-001 must declare
+
+| Layer | Decision required | Default if architect has no preference |
+|---|---|---|
+| Python identifiers | `snake_case` (functions, vars), `PascalCase` (classes), `UPPER_SNAKE` (constants) | snake_case / PascalCase / UPPER_SNAKE |
+| TypeScript/JavaScript | `camelCase` (vars, funcs), `PascalCase` (types, components), `UPPER_SNAKE` (consts) | camelCase / PascalCase / UPPER_SNAKE |
+| Go (if applicable) | `camelCase` (private), `PascalCase` (exported) — **dictated by the language**; no choice | language-mandated |
+| Java/Kotlin (if applicable) | `camelCase` / `PascalCase` / `UPPER_SNAKE` | camelCase / PascalCase / UPPER_SNAKE |
+| SQL tables & columns | one of `snake_case` / `camelCase` | `snake_case` |
+| Environment variables | always `SCREAMING_SNAKE_CASE` | SCREAMING_SNAKE_CASE (not negotiable) |
+| YAML/JSON config keys | one of `snake_case` / `camelCase` / `kebab-case` | `snake_case` |
+| URL path segments | typically `kebab-case` | `kebab-case` |
+| JSON API field names (on the wire) | `snake_case` or `camelCase` | match the **producing** language's idiom |
+| Queue routing keys / event names | `snake_case` (`user.created`) or `dot.notation` | `snake_case` with dot separators |
+| File names (per language) | follow language convention | per-language |
+
+### Cross-layer serialization contract
+
+ADR-001 must also explicitly state, for every layer boundary, how identifiers map across it:
+
+- Python `user_id` ↔ JSON: snake-through OR camelCase via Pydantic alias — pick one project-wide
+- DB column `user_id` ↔ ORM attribute: matched OR aliased — pick one
+- TypeScript `userId` ↔ JSON: camel-through OR snake via serializer — pick one
+- Env var `DATABASE_URL` ↔ code constant `DATABASE_URL` — always matched
+
+### Enforcement
+
+- **Architect agent**: produces ADR-001 BEFORE any other ADR. No design phase begins until ADR-001 exists.
+- **All `conventions/developer/*.md` files**: reference ADR-001 as the source of truth.
+- **All four code reviewers**: check against ADR-001 — `code-reviewer-conventions` is the dedicated agent for this (see [Sub-Agent Index](#code-review-agents)). It runs in parallel with the other three reviewers (Step 8 of Unified Agent Workflow).
+- **Exit gate**: ADR-001 must be present and referenced by all design docs before Implementation phase begins.
 
 ---
 
@@ -568,3 +559,7 @@ See developer.md for detailed enforcement steps. Code reviewers flag structural 
 - Right matters more than feelings
 - Keep markdown lean - enough for intent, no more
 - Document decisions and rationale
+- **Approval scope:** when the user approves an approach, treat it as approved for the full phase. Don't re-ask the same approval at each sub-step — re-ask only when the situation materially changes or a new tradeoff appears.
+- **Workflow gates override auto mode:** The `lets begin` gate (requirements approval) and the code-review-findings-verified gate (before testing) are unconditional. Auto mode advances WITHIN gates, not THROUGH them.
+
+**END CLAUDE.MD**

@@ -17,8 +17,6 @@ Performs deep cross-layer debugging when tests fail. Produces a diagnosis report
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to understand current work context
 2. Receive failing test details from Test Runner
 3. Investigate across all layers (UI → API → Service → Data)
@@ -101,49 +99,6 @@ Always output this format for Task Manager:
 {any other info the fixing agent needs}
 ```
 
-## Memory Integration
-
-Test Debugger uses the Memory MCP to diagnose failures faster by leveraging historical failure data and design context.
-
-### During Investigation
-
-1. **Search for similar past failures:**
-   ```
-   memory_search(query: "{error message or symptom description}", memory_types: ["test_history"])
-   ```
-   - Check if this failure pattern has been seen and resolved before
-   - If found, reference the prior resolution in the diagnosis report
-
-2. **Retrieve design context** for the failing component:
-   ```
-   get_design_context(component_name: "{component under investigation}")
-   ```
-   - Understand intended behavior to distinguish bugs from design flaws
-
-3. **Search for related code patterns:**
-   ```
-   code_search(code_snippet: "{error-producing code pattern}", language: "{language}")
-   ```
-   - Find similar patterns elsewhere that might also be affected
-
-4. **Trace requirements** to check if failure is a requirements gap:
-   ```
-   trace_requirements(requirement_text: "{related requirement}")
-   ```
-
-5. **Validate proposed fix** against design:
-   ```
-   validate_fix(fix_description: "{proposed fix description}", code_changes: "{affected files and changes}")
-   ```
-   - Ensure the fix aligns with design decisions before recommending it
-
-### After Diagnosis
-
-6. **Store diagnosis** for future debuggers:
-   ```
-   memory_add(memory_type: "test_history", content: "Diagnosis: {test_name}. Root cause: {category}. Location: {file:line}. Fix: {recommended action}. Route to: {agent}.", metadata: {"category": "diagnosis", "work_seq": "{seq}", "root_cause": "{category}"})
-   ```
-
 ## Constraints
 
 - Never attempt fixes directly; only diagnose and recommend
@@ -167,8 +122,6 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
 - [ ] Specific file locations and line numbers included
 - [ ] Appropriate agent identified for fix
 - [ ] Actionable fix instructions provided for receiving agent
-- [ ] **Memory: Searched memory for similar past failures and code patterns before investigating**
-- [ ] **Memory: Diagnosis stored in memory MCP for future reference**
 
 ## Log Entry Output
 
@@ -186,8 +139,7 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
   "files_created": [],
   "files_modified": [],
   "decisions": ["Root cause: code_bug in auth handler", "Route to: developer"],
-  "errors": ["TypeError in src/auth/handler.go:42"],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": ["TypeError in src/auth/handler.go:42"]
 }
 </log-entry>
 ```
@@ -199,7 +151,6 @@ Test Debugger uses the Memory MCP to diagnose failures faster by leveraging hist
 - `files_modified`: Usually empty for debugger
 - `decisions`: Root cause classification and routing decisions
 - `errors`: Array of identified errors with file:line references
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

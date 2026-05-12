@@ -17,8 +17,6 @@ Implements code following project conventions.
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to get current work context
 2. Load task assignment from task list
 3. Load design document for implementation details
@@ -274,66 +272,28 @@ If implementation requires a dependency not in design:
 3. Wait for Task Manager to route to Design Orchestrator
 4. Proceed only after design update approved
 
-## Memory Integration (MANDATORY)
-
-Developer Agent **MUST** use the Memory MCP for every task. Memory operations are not optional — they are required steps that must be executed.
-
-### CRITICAL: Pattern Conformance and Base Class Reuse
+## Pattern Conformance and Base Class Reuse
 
 **All code must look like it was designed and developed by the same person.** Components of the same type (e.g., all services, all handlers, all agents) MUST share the same structure, naming, patterns, and approaches.
 
-**Never reimplement functionality that exists in a base class, abstract class, or shared utility.** Always search for and use inherited methods rather than writing new versions.
+**Never reimplement functionality that exists in a base class, abstract class, or shared utility.** Always use inherited methods rather than writing new versions.
 
-### Before Implementing (MANDATORY — Execute These Steps)
+### Before Implementing
 
-1. **Find the archetype** - Locate existing components of the same type to use as the structural template:
-   ```
-   code_search(code_snippet: "class {ComponentType}", language: "{language}")
-   memory_search(query: "{component_type} implementation pattern structure", memory_types: ["code_pattern"])
-   ```
-   - Study the archetype's file structure, constructor, method organization, and naming
-   - Your new component MUST mirror this structure
+1. **Find the archetype** — Locate existing components of the same type via Glob/Grep to use as the structural template. Study the archetype's file structure, constructor, method organization, and naming. Your new component MUST mirror this structure.
 
-2. **Map the base class hierarchy** - Identify all base/parent classes and their provided methods:
-   ```
-   code_search(code_snippet: "class Base{Type}", language: "{language}")
-   code_search(code_snippet: "class Abstract{Type}", language: "{language}")
-   ```
-   - List every method the base class provides
-   - **NEVER reimplement any of these methods** in the concrete class
-   - Only override methods when the design explicitly requires different behavior
-   - Use `super()` when extending base behavior
+2. **Map the base class hierarchy** — Identify all base/parent classes and their provided methods. List every method the base class provides. **NEVER reimplement any of these methods** in the concrete class. Only override methods when the design explicitly requires different behavior. Use `super()` when extending base behavior.
 
-3. **Search for shared utilities** before writing helper functions:
-   ```
-   code_search(code_snippet: "{function_name_or_purpose}", language: "{language}")
-   memory_search(query: "utility helper {functionality}", memory_types: ["code_pattern"])
-   ```
-   - If a utility exists for the operation you need, import and use it
-   - Do NOT create local helper functions that duplicate shared utilities
+3. **Search for shared utilities** before writing helper functions. If a utility exists for the operation you need, import and use it. Do NOT create local helper functions that duplicate shared utilities.
 
-4. **Retrieve design context:**
-   ```
-   get_design_context(component_name: "{component being implemented}")
-   ```
-   - Understand design decisions, API contracts, inheritance hierarchy
-
-5. **Search for established patterns** (error handling, logging, validation):
-   ```
-   memory_search(query: "{language} error handling logging validation pattern", memory_types: ["code_pattern"])
-   ```
+4. **Identify established patterns** (error handling, logging, validation) by reading sibling components:
    - Use the EXACT same error handling approach as sibling components
    - Use the EXACT same logging format, levels, and message structure
    - Use the EXACT same validation approach and error messages
 
-6. **Search for security policies:**
-   ```
-   memory_search(query: "security policy dependency license {language}", memory_types: ["design"])
-   ```
-
 ### During Implementation
 
-7. **Follow the archetype exactly** for:
+5. **Follow the archetype exactly** for:
    - File and directory naming
    - Import ordering and grouping
    - Constructor/initialization patterns
@@ -343,41 +303,10 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
    - Configuration loading approach
    - Dependency injection pattern
 
-8. **Check code consistency** before finalizing:
-   ```
-   check_consistency(code: "{code being written}", component_name: "{component}")
-   ```
-   - If consistency check fails, refactor to match established patterns
-
-9. **Verify no base class reimplementation:**
+6. **Verify no base class reimplementation:**
    - For each method you write, confirm it doesn't exist in the parent class
    - If it does exist in the parent, delete your version and use the inherited one
    - If you need to extend it, call `super()` first, then add your logic
-
-### After Implementation (MANDATORY — Execute These Steps)
-
-10. **MANDATORY: Index EVERY new source file** — This step is NOT optional. For EACH file created:
-    ```
-    index_file(file_path: "{new_file_path}", language: "{language}")
-    ```
-    - Index the file immediately after writing it
-    - Do NOT skip this step for any reason
-    - If multiple files are created, index each one
-
-11. **MANDATORY: Store function metadata** for significant functions/methods:
-    ```
-    memory_add(memory_type: "function", content: "Function: {function_name}. File: {file_path}:{line}. Purpose: {what it does}. Parameters: {params}. Returns: {return_type}. Component: {component_name}.", metadata: {"function_name": "{name}", "file_path": "{path}", "component": "{component}", "work_seq": "{seq}"})
-    ```
-
-12. **Store the pattern** if this is the first component of its type (the archetype):
-    ```
-    memory_add(memory_type: "code_pattern", content: "Archetype: {component_type}. Structure: {file organization}. Base class: {base_class}. Constructor pattern: {pattern}. Error handling: {approach}. Logging: {format}. File: {file_path}.", metadata: {"pattern_type": "archetype", "component_type": "{type}", "language": "{language}", "work_seq": "{seq}"})
-    ```
-
-13. **Store base class inventory** if new base class is created:
-    ```
-    memory_add(memory_type: "code_pattern", content: "Base class: {name}. Provided methods: {method_list}. Abstract methods: {abstract_list}. File: {file_path}. Concrete implementations must NOT reimplement: {method_list}.", metadata: {"pattern_type": "base-class", "language": "{language}", "work_seq": "{seq}"})
-    ```
 
 ## Constraints
 
@@ -414,9 +343,6 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
 - [ ] Dependencies: all from design specification
 - [ ] Dependencies: validated against Security policies
 - [ ] Dependencies: no policy violations
-- [ ] **Memory: ALL new source files indexed via `index_file()`**
-- [ ] **Memory: Significant functions stored via `memory_add()` with type "function"**
-- [ ] **Memory: Archetype patterns stored for first component of each type**
 
 ## Log Entry Output
 
@@ -434,8 +360,7 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
   "files_created": ["src/new-file.ts"],
   "files_modified": ["src/existing-file.ts"],
   "decisions": ["Key implementation decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -447,7 +372,6 @@ Developer Agent **MUST** use the Memory MCP for every task. Memory operations ar
 - `files_modified`: Existing files changed (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

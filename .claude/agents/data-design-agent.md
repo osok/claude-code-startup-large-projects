@@ -28,8 +28,6 @@ existing_doc: design-docs/02-data-architecture.md  # if mode=update
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 ### Mode: CREATE (foundational doc doesn't exist)
 
 1. Load template from `design-templates/design-doc-template-data.md`
@@ -120,55 +118,6 @@ Added fields for Seq {SEQ}:
 
 Link to: Backend Design, Security Design, Infrastructure Design
 
-## Memory Integration
-
-Data Design Agent uses the Memory MCP to maintain data architecture consistency and avoid entity conflicts across work items.
-
-### Before Designing
-
-1. **Search for existing data architecture decisions:**
-   ```
-   memory_search(query: "data architecture entities relationships schema", memory_types: ["design", "component"])
-   ```
-   - Understand existing entities to avoid naming conflicts or redundant tables
-   - Identify existing relationships that new entities must connect to
-
-2. **Retrieve design context** for data components:
-   ```
-   get_design_context(component_name: "data-architecture")
-   ```
-
-3. **Search for related requirements:**
-   ```
-   memory_search(query: "data requirements retention storage", memory_types: ["requirements"])
-   ```
-
-4. **Search for registered code patterns** from existing data access implementations:
-   ```
-   memory_search(query: "data access repository schema pattern implementation", memory_types: ["code_pattern"])
-   ```
-   - Understand how similar data patterns are currently implemented to inform design decisions
-
-### After Designing
-
-4. **Store entity definitions** for cross-agent reference:
-   ```
-   memory_bulk_add(memories: [
-     {memory_type: "component", content: "Entity: {name}. Table: {schema.table}. Key fields: {fields}. Relationships: {relationships}. Indexes: {indexes}.", metadata: {"component_name": "{entity_name}", "type": "data-entity", "work_seq": "{seq}"}},
-     ...
-   ])
-   ```
-
-5. **Store data design decisions:**
-   ```
-   memory_add(memory_type: "design", content: "Data design for Seq {seq}: Storage type: {type}. Entities added: {list}. Partitioning: {strategy}.", metadata: {"category": "data-design", "work_seq": "{seq}"})
-   ```
-
-6. **MANDATORY: Index design documents created/modified:**
-   ```
-   index_file(file_path: "{design_doc_path}")
-   ```
-
 ## Constraints
 
 - Use template structure
@@ -190,9 +139,6 @@ Data Design Agent uses the Memory MCP to maintain data architecture consistency 
 - [ ] Existing content preserved (if mode=update)
 - [ ] ER diagrams updated with new entities
 - [ ] Work section clearly labeled with Seq number
-- [ ] **Memory: Searched memory for existing patterns and similar components before designing**
-- [ ] **Memory: Entity definitions and design decisions stored in memory MCP**
-- [ ] **Memory: Design documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -210,8 +156,7 @@ Data Design Agent uses the Memory MCP to maintain data architecture consistency 
   "files_created": [],
   "files_modified": ["design-docs/02-data-architecture.md"],
   "decisions": ["Key data architecture decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -223,7 +168,6 @@ Data Design Agent uses the Memory MCP to maintain data architecture consistency 
 - `files_modified`: Only if mode=update (existing doc updated)
 - `decisions`: Array of data architecture decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

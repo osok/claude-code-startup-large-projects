@@ -17,8 +17,6 @@ Parses requirements documents and produces structured analysis for design orches
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read all documents in `requirement-docs/`
 2. Parse ISO/IEC/IEEE 29148:2018 structure (9 sections)
 3. Extract document metadata (ID, version, status)
@@ -94,46 +92,6 @@ traceability:
     traced_from: [{REQ-IDs}]
 ```
 
-## Memory Integration
-
-Requirements Analyzer uses the Memory MCP to enrich analysis with prior context and store structured results for downstream agents.
-
-### Before Analysis
-
-1. **Search for prior requirement analyses:**
-   ```
-   memory_search(query: "requirements analysis components traceability", memory_types: ["requirements", "design"])
-   ```
-   - Understand existing component mappings from prior work sequences
-   - Identify cross-work dependencies
-
-2. **Retrieve existing requirements** to build complete picture:
-   ```
-   memory_search(query: "REQ-* functional requirements", memory_types: ["requirements"], limit: 50)
-   ```
-   - Include prior requirements in traceability analysis
-
-### After Analysis
-
-3. **Store component identification results:**
-   ```
-   memory_bulk_add(memories: [
-     {memory_type: "component", content: "Component: {name}. Type: {frontend|backend|agent|library}. Requirements: {REQ-IDs}. Dependencies: {list}.", metadata: {"component_name": "{name}", "work_seq": "{seq}"}},
-     ...
-   ])
-   ```
-
-4. **Store cross-cutting concerns** for design agents:
-   ```
-   memory_add(memory_type: "design", content: "Cross-cutting concerns for Seq {seq}: Security: {details}. Performance: {details}. Accessibility: {details}.", metadata: {"category": "cross-cutting", "work_seq": "{seq}"})
-   ```
-
-5. **Trace requirements** to check existing implementations:
-   ```
-   trace_requirements(requirement_text: "{requirement description}")
-   ```
-   - Identify which requirements already have partial implementations
-
 ## Constraints
 
 - Parse all documents before analysis
@@ -149,8 +107,6 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
 - [ ] Requirements categorized by ID pattern
 - [ ] Traceability matrix built
 - [ ] Cross-cutting concerns extracted
-- [ ] **Memory: Searched memory for prior analyses and existing components before starting**
-- [ ] **Memory: Component identification and cross-cutting concerns stored in memory MCP**
 
 ## Log Entry Output
 
@@ -168,8 +124,7 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
   "files_created": [],
   "files_modified": [],
   "decisions": ["Component identification and categorization decisions"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -181,7 +136,6 @@ Requirements Analyzer uses the Memory MCP to enrich analysis with prior context 
 - `files_modified`: Usually empty
 - `decisions`: Component identification and categorization decisions
 - `errors`: Array of parsing errors or ambiguities found
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 

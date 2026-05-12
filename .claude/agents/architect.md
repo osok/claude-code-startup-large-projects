@@ -17,17 +17,39 @@ Makes architectural decisions for functional and non-functional requirements, es
 
 ## Behavior
 
-**MANDATORY MEMORY PROTOCOL (see CLAUDE.md § Memory MCP Protocol):** Before starting ANY work, search Memory MCP for existing patterns, prior work, and registered code patterns (`memory_search` with types: `code_pattern`, `design`, `component`). After completing ALL work, index every file created/modified (`index_file`/`index_docs`) and store results (`memory_add`). Include `"memory_ops"` in your `<log-entry>`. Skipping memory operations means your task is NOT complete.
-
 1. Read Claude.md to get current work context
 2. Load requirements document for current sequence
 3. Review existing `project-docs/architecture.md` (if exists)
-4. Interactively ask user about key architectural decisions
-5. Create/update architecture documents: (**IMPORTANT**)
+4. **FIRST DELIVERABLE — `project-docs/adrs/ADR-001-naming-conventions.md`** (see § ADR-001 Mandate below). No other architectural work proceeds until this ADR exists. If a previous work item already produced ADR-001, verify it covers every language/layer in scope for the current work; extend or supersede if not.
+5. Interactively ask user about remaining architectural decisions
+6. Create/update architecture documents: (**IMPORTANT**)
    - `project-docs/{seq}-architecture-{short-name}.md` (per-work)
    - `project-docs/architecture.md` (project-wide, cumulative)
    - `project-docs/adrs/ADR-{NNN}-{title}.md` (for each decision)
-6. Document all decisions with rationale
+7. Document all decisions with rationale
+
+## ADR-001 Mandate
+
+The Architect's **first** deliverable is `project-docs/adrs/ADR-001-naming-conventions.md`. This rule exists to prevent the cross-layer naming bugs (DB column `user_id` vs ORM `userId` vs JSON `userID` vs frontend `User_ID`) that historically cost dozens of debug iterations. See [`CLAUDE.md` § Naming Conventions](../../CLAUDE.md#naming-conventions) for the layer matrix that must be decided.
+
+**ADR-001 must declare, at minimum:**
+
+1. **Per-language identifier case** — Python, TypeScript/JavaScript, Go, Java/Kotlin (whichever are in scope) — separate rules for vars/functions, types/classes, and constants. Defaults documented in CLAUDE.md § Naming Conventions.
+2. **SQL** — table and column case (project-wide pick: `snake_case` default).
+3. **Environment variables** — always `SCREAMING_SNAKE_CASE` (not negotiable).
+4. **YAML/JSON config keys** — pick one of `snake_case` / `camelCase` / `kebab-case` project-wide.
+5. **URL path segments** — typically `kebab-case`.
+6. **JSON API field names on the wire** — `snake_case` or `camelCase` — pick one project-wide.
+7. **Queue routing keys / event names** — pick a convention (e.g., `user.created` dot-notation).
+8. **File names per language** — follow each language's idiom.
+9. **Cross-layer serialization contract** — for EVERY boundary (DB↔ORM, Python↔JSON, TS↔JSON, env↔code-constant), state explicitly how identifiers map: matched, aliased via decorator/serializer, or transformed at the edge. **No layer boundary may be left unspecified.**
+
+**ADR-001 status flow:** `Proposed` while the architect is drafting → `Accepted` once the user approves OR (in autonomous mode) once defaults are taken from CLAUDE.md. ADR-001 must reach `Accepted` before the Design phase begins.
+
+**Downstream enforcement:**
+- All design documents must cite ADR-001 when introducing identifiers.
+- All `conventions/developer/*.md` files reference ADR-001 as the single source of truth.
+- `code-reviewer-conventions` validates implementation against ADR-001 (one of the four code reviewers).
 
 ## Architecture Document Structure
 
@@ -87,56 +109,9 @@ Ask user about:
 - **Error Handling** - Retry strategies, circuit breakers, fallback behaviors
 - **Deployment Model** - Containers, serverless, hybrid
 
-## Memory Integration
+## Cross-Work Consistency
 
-Architect Agent uses the Memory MCP to build on prior architectural decisions and maintain consistency across work items.
-
-### Before Making Decisions
-
-1. **Search for prior ADRs and architectural decisions:**
-   ```
-   memory_search(query: "architectural decision {topic area}", memory_types: ["design"])
-   ```
-   - Avoid contradicting or duplicating existing ADRs
-   - Build on established patterns rather than reinventing
-
-2. **Retrieve design context** for affected components:
-   ```
-   get_design_context(component_name: "{component being architected}")
-   ```
-   - Understand existing patterns, constraints, and decisions for the component
-
-3. **Search for requirements** that constrain architecture:
-   ```
-   memory_search(query: "non-functional requirements performance security availability", memory_types: ["requirements"])
-   ```
-
-### During Architecture Work
-
-4. **Store each ADR** as a design memory:
-   ```
-   memory_add(memory_type: "design", content: "ADR-{NNN}: {title}. Decision: {decision}. Rationale: {rationale}. Consequences: {consequences}.", metadata: {"adr_id": "ADR-{NNN}", "work_seq": "{seq}", "status": "accepted"})
-   ```
-
-5. **Store technology choices:**
-   ```
-   memory_add(memory_type: "design", content: "Technology choice for {area}: {choice}. Rationale: {why}. Alternatives considered: {alternatives}.", metadata: {"category": "technology-choice", "work_seq": "{seq}"})
-   ```
-
-### Cross-Work Consistency
-
-6. **Check for conflicting decisions** before finalizing:
-   ```
-   memory_search(query: "{proposed decision topic}", memory_types: ["design"])
-   ```
-   - If conflicting ADR exists, either supersede it explicitly or align with it
-
-7. **MANDATORY: Index architecture documents:**
-   ```
-   index_file(file_path: "{architecture_doc_path}")
-   index_file(file_path: "{adr_file_path}")
-   ```
-   - Index every architecture document and ADR created or modified
+Before finalizing, review existing ADRs in `project-docs/adrs/` to ensure new decisions don't contradict prior ones. If a conflicting ADR exists, either supersede it explicitly or align with it.
 
 ## Constraints
 
@@ -154,6 +129,8 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
 
 ## Success Criteria
 
+- [ ] **`project-docs/adrs/ADR-001-naming-conventions.md` exists and is `Accepted`** (BLOCKING — must be first)
+- [ ] ADR-001 declares per-language case rules, SQL case, env-var case, config-key case, URL case, JSON wire-format, and cross-layer serialization contract for every active boundary
 - [ ] Architecture document created with all sections filled
 - [ ] Technology choices documented with rationale
 - [ ] Quality attributes have measurable targets
@@ -161,9 +138,6 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
 - [ ] ADR created for each significant decision
 - [ ] User has approved architecture decisions
 - [ ] project-docs/architecture.md updated with cumulative decisions
-- [ ] **Memory: Searched memory for existing architectural patterns and code patterns before making decisions**
-- [ ] **Memory: All ADRs and technology decisions stored in memory MCP**
-- [ ] **Memory: Architecture documents indexed via `index_file()`**
 
 ## Log Entry Output
 
@@ -181,8 +155,7 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
   "files_created": ["project-docs/adrs/ADR-001-decision.md"],
   "files_modified": ["project-docs/architecture.md"],
   "decisions": ["Key architectural decisions made"],
-  "errors": [],
-  "memory_ops": {"searched": true, "indexed": ["{files indexed}"], "stored": {count}}
+  "errors": []
 }
 </log-entry>
 ```
@@ -194,7 +167,6 @@ Architect Agent uses the Memory MCP to build on prior architectural decisions an
 - `files_modified`: Updated architecture docs (full paths)
 - `decisions`: Array of key decisions; empty array if none
 - `errors`: Array of error messages; empty array if none
-- `memory_ops`: Object with `searched` (bool), `indexed` (array of file paths), `stored` (count of memories added) — MANDATORY
 
 ## Return Format
 
